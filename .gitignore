@@ -15,3 +15,8 @@ node_modules/
 
 # Private — real portfolio holdings, never commit
 portfolio.json
+
+# Test artifacts
+.playwright-mcp/
+*.jpeg
+*.png

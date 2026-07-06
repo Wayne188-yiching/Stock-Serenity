@@ -927,30 +927,95 @@ function startAutoRefresh() {
 }
 
 // ========== Serenity Allocation Calculator ==========
-const serenityStocks = [
-    { name: '緯創', ticker: '3231', weight: 0.35, price: 159, tier: '⭐ 最高' },
-    { name: '穩懋', ticker: '3105', weight: 0.25, price: 411, tier: '🔥 高' },
-    { name: '華邦電', ticker: '2344', weight: 0.20, price: 184.5, tier: '🔥 高' },
-    { name: '緯穎', ticker: '6669', weight: 0.10, price: 5265, tier: '📈 中高' },
-    { name: '台積電', ticker: '2330', weight: 0.10, price: 2445, tier: '🛡️ 底倉' },
-];
+let serenityStocks = [];
+let serenityMeta = { lastReviewed: null, strategyNote: null };
+let serenityPricesUpdatedAt = null;
+
+async function loadSerenityStocks() {
+    try {
+        const response = await fetch('serenity.json?' + Date.now());
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        serenityStocks = (data.stocks || []).map(s => ({
+            name: s.name,
+            ticker: s.ticker,
+            market: s.market || 'TW',
+            weight: Number(s.weight) || 0,
+            tier: s.tier || '',
+            livePrice: null,
+        }));
+        serenityMeta = { lastReviewed: data.lastReviewed || null, strategyNote: data.strategyNote || null };
+        updateSerenityMetaUI();
+    } catch (err) {
+        console.warn('Serenity list load failed:', err.message);
+        serenityStocks = [];
+    }
+}
+
+async function refreshSerenityPrices() {
+    if (!serenityStocks.length) return;
+    updateSerenityPriceStatus('抓取中…');
+    const settled = await Promise.all(serenityStocks.map(async s => {
+        try {
+            const p = await fetchPrice({ market: s.market, symbol: s.ticker });
+            return { ...s, livePrice: p.price || null };
+        } catch {
+            return { ...s, livePrice: null };
+        }
+    }));
+    serenityStocks = settled;
+    serenityPricesUpdatedAt = new Date();
+    updateSerenityPriceStatus();
+}
+
+function updateSerenityMetaUI() {
+    const el = document.getElementById('serenity-meta');
+    if (el && (serenityMeta.lastReviewed || serenityMeta.strategyNote)) {
+        el.textContent = `名單 ${serenityMeta.lastReviewed || '—'} · ${serenityMeta.strategyNote || ''}`;
+    }
+}
+
+function updateSerenityPriceStatus(overrideText) {
+    const el = document.getElementById('serenity-price-updated');
+    if (!el) return;
+    if (overrideText) { el.textContent = overrideText; return; }
+    if (!serenityPricesUpdatedAt) { el.textContent = '股價：尚未載入'; return; }
+    const t = serenityPricesUpdatedAt.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false });
+    el.textContent = `股價 @ ${t}`;
+}
 
 function calcSerenityAlloc() {
     const budget = parseFloat(document.getElementById('serenity-budget').value) || 80000;
     const tbody = document.getElementById('serenity-alloc-tbody');
+    if (!tbody) return;
+
+    if (!serenityStocks.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-row">Serenity 名單載入中…</td></tr>';
+        return;
+    }
 
     tbody.innerHTML = serenityStocks.map(s => {
         const amount = Math.round(budget * s.weight);
-        const shares = Math.floor(amount / s.price);
+        const price = s.livePrice;
+        const shares = price ? Math.floor(amount / price) : '—';
+        const priceHint = price
+            ? `<span class="cell-hint">@ $${price.toFixed(2)}</span>`
+            : `<span class="cell-hint muted-text">價格待更新</span>`;
         return `<tr>
-            <td>${s.name}</td>
-            <td>${s.ticker}</td>
+            <td>${escapeHtml(s.name)}</td>
+            <td>${escapeHtml(s.ticker)}</td>
             <td>${(s.weight * 100).toFixed(0)}%</td>
             <td>$${amount.toLocaleString()}</td>
-            <td>~${shares} 股</td>
-            <td>${s.tier}</td>
+            <td>~${shares} 股 ${priceHint}</td>
+            <td>${escapeHtml(s.tier)}</td>
         </tr>`;
     }).join('');
+}
+
+async function refreshSerenityAndRecalc() {
+    await refreshSerenityPrices();
+    calcSerenityAlloc();
+    renderSerenityComparison();
 }
 
 // Auto-calc on Enter key
@@ -1384,14 +1449,16 @@ async function checkPriceAlerts(results) {
 }
 
 // ========== Init ==========
-function init() {
+async function init() {
     renderManageTable();
     if (portfolio.length > 0) {
         refreshAll();
     }
     startAutoRefresh();
-    // Init serenity calculator with default value
-    calcSerenityAlloc();
+    // Load Serenity list from JSON, then fetch live prices, then render
+    await loadSerenityStocks();
+    calcSerenityAlloc();          // show list with "價格待更新" placeholder
+    refreshSerenityAndRecalc();   // async: fetch prices and re-render (non-blocking)
     // Load my real holdings
     loadMyHoldings();
 }

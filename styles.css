@@ -991,6 +991,19 @@ tr.skeleton-row .sk-bar-lg { width: 90%; }
 }
 .calc-input input:focus { box-shadow: none; }
 
+.serenity-status {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 6px 10px; border-left: 2px solid var(--border-subtle);
+  align-self: center;
+}
+.small-text { font-size: 11px; line-height: 1.4; }
+.cell-hint {
+  font-family: var(--f-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-left: 4px;
+}
+
 .alloc-visual { flex: 1; min-width: 260px; }
 .alloc-visual-head {
   display: flex; justify-content: space-between; align-items: center;

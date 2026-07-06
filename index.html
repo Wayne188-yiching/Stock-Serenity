@@ -509,7 +509,12 @@
         <button class="seg-btn budget-preset" data-budget="100000">10萬</button>
         <button class="seg-btn budget-preset" data-budget="200000">20萬</button>
       </div>
-      <button class="btn btn-primary btn-sm" onclick="calcSerenityAlloc()"><i class="fas fa-calculator"></i> 重新計算</button>
+      <button class="btn btn-primary btn-sm" onclick="refreshSerenityAndRecalc()"><i class="fas fa-calculator"></i> 重新計算</button>
+
+      <div class="serenity-status">
+        <div id="serenity-meta" class="mono muted-text small-text">名單載入中…</div>
+        <div id="serenity-price-updated" class="mono muted-text small-text">股價：尚未載入</div>
+      </div>
 
       <div class="alloc-visual">
         <div class="alloc-visual-head">
