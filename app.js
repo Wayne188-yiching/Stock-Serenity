@@ -944,12 +944,51 @@ async function loadSerenityStocks() {
             tier: s.tier || '',
             livePrice: null,
         }));
-        serenityMeta = { lastReviewed: data.lastReviewed || null, strategyNote: data.strategyNote || null };
+        serenityMeta = {
+            lastReviewed: data.lastReviewed || null,
+            nextReviewBy: data.nextReviewBy || null,
+            reviewCadenceDays: data.reviewCadenceDays || null,
+            strategyNote: data.strategyNote || null,
+        };
         updateSerenityMetaUI();
+        updateSerenityReviewStatus();
     } catch (err) {
         console.warn('Serenity list load failed:', err.message);
         serenityStocks = [];
     }
+}
+
+function updateSerenityReviewStatus() {
+    const el = document.getElementById('serenity-review-status');
+    if (!el || !serenityMeta.nextReviewBy) return;
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const due = new Date(serenityMeta.nextReviewBy);
+    due.setHours(0, 0, 0, 0);
+    const daysDiff = Math.round((due - now) / 86400000);
+
+    let state, iconClass, text;
+    if (daysDiff < 0) {
+        state = 'overdue';
+        iconClass = 'fa-triangle-exclamation';
+        text = `名單已逾期 ${Math.abs(daysDiff)} 天，請 review`;
+    } else if (daysDiff <= 7) {
+        state = 'warn';
+        iconClass = 'fa-clock';
+        text = `距下次 review 僅 ${daysDiff} 天`;
+    } else {
+        state = 'ok';
+        iconClass = 'fa-calendar-check';
+        text = `距下次 review ${daysDiff} 天 · ${serenityMeta.nextReviewBy}`;
+    }
+
+    el.className = `review-chip review-chip-${state}`;
+    el.innerHTML =
+        `<i class="fas ${iconClass}" aria-hidden="true"></i>` +
+        `<span>${text}</span>` +
+        (state !== 'ok'
+            ? ` <a href="https://github.com/Wayne188-yiching/Stock-Serenity/edit/main/serenity.json" target="_blank" rel="noopener" class="review-edit-link">編輯名單 <i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i></a>`
+            : '');
 }
 
 async function refreshSerenityPrices() {

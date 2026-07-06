@@ -1,5 +1,7 @@
 {
   "lastReviewed": "2026-07-06",
+  "nextReviewBy": "2026-08-06",
+  "reviewCadenceDays": 30,
   "strategyNote": "AI/半導體供應鏈瓶頸點 · Serenity 12 條方法論 checklist 篩選",
   "stocks": [
     { "name": "緯創",   "ticker": "3231", "market": "TW", "weight": 0.35, "tier": "⭐ 最高" },

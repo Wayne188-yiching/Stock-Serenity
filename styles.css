@@ -992,10 +992,48 @@ tr.skeleton-row .sk-bar-lg { width: 90%; }
 .calc-input input:focus { box-shadow: none; }
 
 .serenity-status {
-  display: flex; flex-direction: column; gap: 2px;
+  display: flex; flex-direction: column; gap: 4px;
   padding: 6px 10px; border-left: 2px solid var(--border-subtle);
   align-self: center;
 }
+
+.review-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px; border-radius: 999px;
+  font-size: 11px; font-family: var(--f-mono); font-weight: 500;
+  width: fit-content;
+  border: 1px solid transparent;
+  transition: background 0.2s, border-color 0.2s;
+}
+.review-chip i { font-size: 10px; }
+.review-chip-ok {
+  background: rgba(52, 199, 89, 0.08);
+  border-color: rgba(52, 199, 89, 0.25);
+  color: #6ee7a5;
+}
+.review-chip-warn {
+  background: rgba(245, 158, 11, 0.10);
+  border-color: rgba(245, 158, 11, 0.35);
+  color: #fbbf24;
+}
+.review-chip-overdue {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #f87171;
+  animation: review-pulse 2s ease-in-out infinite;
+}
+@keyframes review-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.35); }
+  50%      { box-shadow: 0 0 0 4px rgba(239, 68, 68, 0); }
+}
+.review-edit-link {
+  margin-left: 4px;
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  white-space: nowrap;
+}
+.review-edit-link:hover { opacity: 0.85; }
 .small-text { font-size: 11px; line-height: 1.4; }
 .cell-hint {
   font-family: var(--f-mono);
