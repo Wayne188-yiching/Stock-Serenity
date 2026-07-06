@@ -1,0 +1,23 @@
+{
+  "lastUpdated": "2026-07-06",
+  "holdings": [
+    {
+      "market": "TW",
+      "symbol": "2330",
+      "name": "台積電",
+      "shares": 100,
+      "cost": 800,
+      "targetPrice": null,
+      "stopLoss": null
+    },
+    {
+      "market": "US",
+      "symbol": "NVDA",
+      "name": "NVIDIA",
+      "shares": 10,
+      "cost": 500,
+      "targetPrice": null,
+      "stopLoss": null
+    }
+  ]
+}

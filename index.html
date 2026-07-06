@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StockFolio · Stock Portfolio Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+
+<a href="#page-dashboard" class="skip-link">跳到主要內容</a>
+
+<!-- ============================================================
+     SIDEBAR
+============================================================ -->
+<aside class="sidebar" role="complementary" aria-label="主要側邊欄">
+  <div class="sidebar-logo">
+    <div class="logo-mark" aria-hidden="true">S</div>
+    <div class="logo-text">
+      <div class="logo-name">StockFolio</div>
+      <div class="logo-tag">SERENITY EDITION</div>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav" role="navigation" aria-label="主要導覽">
+    <a href="#" class="nav-item active" data-page="dashboard" data-tour-target="nav-dashboard">
+      <i class="fas fa-th-large"></i><span>總覽</span>
+    </a>
+    <a href="#" class="nav-item" data-page="portfolio">
+      <i class="fas fa-wallet"></i><span>持股管理</span>
+    </a>
+    <a href="#" class="nav-item" data-page="charts">
+      <i class="fas fa-chart-area"></i><span>走勢圖</span>
+    </a>
+    <a href="#" class="nav-item" data-page="news">
+      <i class="fas fa-newspaper"></i><span>新聞</span>
+      <span class="nav-badge" id="news-badge" hidden></span>
+    </a>
+    <a href="#" class="nav-item" data-page="myholdings">
+      <i class="fas fa-briefcase"></i><span>我的持倉</span>
+    </a>
+    <a href="#" class="nav-item nav-item-serenity" data-page="serenity" data-tour-target="nav-serenity">
+      <i class="fas fa-brain"></i><span>Serenity</span>
+      <span class="nav-tag">NEW</span>
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <button class="settings-btn" id="settings-btn" aria-label="設定" data-tour-target="settings">
+      <i class="fas fa-cog"></i><span>設定</span>
+      <span class="settings-dot" id="settings-dot" hidden></span>
+    </button>
+    <div class="update-info">
+      <span class="live-dot"></span>
+      <span id="last-update">尚未更新</span>
+    </div>
+  </div>
+</aside>
+
+<!-- ============================================================
+     MAIN
+============================================================ -->
+<main class="main-content">
+
+  <!-- ==========================
+       PAGE · DASHBOARD
+  ========================== -->
+  <section id="page-dashboard" class="page active" aria-labelledby="h1-dashboard">
+    <header class="page-header">
+      <div>
+        <h1 id="h1-dashboard">投資組合總覽</h1>
+        <p class="page-sub"><span id="holdings-count">0</span> 檔持股</p>
+      </div>
+      <div class="page-actions">
+        <button class="btn btn-ghost" id="export-btn"><i class="fas fa-download"></i> 匯出</button>
+        <button class="btn btn-primary" onclick="refreshAll()" aria-label="更新所有股價數據"><i class="fas fa-sync-alt" aria-hidden="true"></i> 更新數據</button>
+      </div>
+    </header>
+
+    <!-- Summary cards -->
+    <div class="summary-cards" data-tour-target="kpis">
+      <!-- Primary -->
+      <div class="card kpi-card kpi-primary">
+        <div class="kpi-top">
+          <span class="kpi-label">總市值 · Total Value</span>
+          <span class="kpi-variant">PRIMARY</span>
+        </div>
+        <div class="kpi-row">
+          <span class="card-value num" id="total-value">$0</span>
+          <span class="stat-chip stat-chip-neutral" id="total-day-chg">—</span>
+        </div>
+        <svg class="kpi-spark" viewBox="0 0 320 32" preserveAspectRatio="none" id="spark-total-value"><path d="" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+      </div>
+      <!-- Cost -->
+      <div class="card kpi-card">
+        <span class="kpi-label">總成本 · Cost</span>
+        <span class="card-value num" id="total-cost">$0</span>
+        <span class="kpi-hint">已投入本金</span>
+        <div class="card-icon" id="cost-icon" hidden></div>
+      </div>
+      <!-- P&L -->
+      <div class="card kpi-card">
+        <span class="kpi-label">總損益 · P&amp;L</span>
+        <span class="card-value num" id="total-pnl">$0</span>
+        <span class="kpi-hint">未實現</span>
+        <div class="card-icon" id="pnl-icon" hidden></div>
+      </div>
+      <!-- % -->
+      <div class="card kpi-card">
+        <span class="kpi-label">報酬率 · Return %</span>
+        <span class="card-value num" id="total-pnl-pct">0%</span>
+        <span class="kpi-hint" id="return-benchmark">—</span>
+        <div class="card-icon" id="pnl-pct-icon" hidden></div>
+      </div>
+    </div>
+
+    <!-- Charts row -->
+    <div class="charts-row">
+      <div class="card chart-card chart-card-wide">
+        <div class="card-head">
+          <div>
+            <h3>資產淨值走勢</h3>
+            <div class="chart-legend">
+              <span><i class="dot dot-blue"></i>市值</span>
+              <span><i class="dot dot-dashed"></i>成本</span>
+            </div>
+          </div>
+          <div class="segmented" data-target="nav-period">
+            <button class="seg-btn" data-nav-period="1mo">30D</button>
+            <button class="seg-btn active" data-nav-period="3mo">90D</button>
+            <button class="seg-btn" data-nav-period="1y">1Y</button>
+          </div>
+        </div>
+        <div class="chart-container">
+          <canvas id="pnl-chart" role="img" aria-label="資產淨值走勢圖"></canvas>
+        </div>
+      </div>
+
+      <div class="card chart-card">
+        <div class="card-head"><h3>持股配置</h3><span class="mono holdings-total" id="allocation-total">—</span></div>
+        <div class="chart-container donut-container">
+          <canvas id="allocation-chart" role="img" aria-label="持股配置比例圖"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Holdings table -->
+    <div class="card table-card" data-tour-target="holdings">
+      <div class="card-head">
+        <div class="head-left">
+          <h3>持股明細</h3>
+          <span class="count-badge" id="holdings-count-badge">0</span>
+        </div>
+        <div class="head-right">
+          <div class="search-input search-input-sm">
+            <i class="fas fa-search"></i>
+            <input type="text" id="holdings-search" placeholder="搜尋代號 / 名稱…" aria-label="搜尋持股">
+          </div>
+          <div class="segmented segmented-sm">
+            <button class="seg-btn active" data-market-filter="all">全部</button>
+            <button class="seg-btn" data-market-filter="TW">TW</button>
+            <button class="seg-btn" data-market-filter="US">US</button>
+          </div>
+        </div>
+      </div>
+      <div class="table-wrapper">
+        <table id="holdings-table" class="sortable-table">
+          <thead>
+            <tr>
+              <th scope="col" class="th-code" data-sort-key="0" data-sort-type="text">代號</th>
+              <th scope="col" class="th-name" data-sort-key="1" data-sort-type="text">名稱</th>
+              <th scope="col" class="th-market" data-sort-key="2" data-sort-type="text">市場</th>
+              <th scope="col" class="th-num" data-sort-key="3" data-sort-type="num">持股</th>
+              <th scope="col" class="th-num" data-sort-key="4" data-sort-type="num">成本價</th>
+              <th scope="col" class="th-num" data-sort-key="5" data-sort-type="num">現價</th>
+              <th scope="col" class="th-num" data-sort-key="6" data-sort-type="num">市值</th>
+              <th scope="col" class="th-num" data-sort-key="7" data-sort-type="num">損益</th>
+              <th scope="col" class="th-num" data-sort-key="8" data-sort-type="num">漲跌%</th>
+              <th scope="col" class="th-alert">觸價狀態</th>
+            </tr>
+          </thead>
+          <tbody id="holdings-tbody">
+            <tr class="empty-row"><td colspan="10">尚無持股，請到「持股管理」新增</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================
+       PAGE · PORTFOLIO
+  ========================== -->
+  <section id="page-portfolio" class="page" aria-labelledby="h1-portfolio">
+    <header class="page-header">
+      <div>
+        <h1 id="h1-portfolio">持股管理</h1>
+        <p class="page-sub">編輯 · 新增 · 匯入 / 匯出</p>
+      </div>
+      <div class="page-actions">
+        <button class="btn btn-primary btn-lg" id="open-drawer-btn"><i class="fas fa-plus"></i> 新增持股</button>
+      </div>
+    </header>
+
+    <!-- Action bar -->
+    <div class="card action-bar">
+      <div class="search-input">
+        <i class="fas fa-search"></i>
+        <input type="text" placeholder="搜尋股票代號或名稱…" id="manage-search">
+      </div>
+      <div class="segmented">
+        <button class="seg-btn active" data-manage-filter="all">全部 <span class="filter-count" id="cnt-all">0</span></button>
+        <button class="seg-btn" data-manage-filter="TW">台股 <span class="filter-count" id="cnt-tw">0</span></button>
+        <button class="seg-btn" data-manage-filter="US">美股 <span class="filter-count" id="cnt-us">0</span></button>
+      </div>
+      <div class="action-bar-right">
+        <button class="btn btn-secondary btn-sm" id="csv-export"><i class="fas fa-file-export"></i> 匯出 CSV</button>
+        <button class="btn btn-secondary btn-sm" id="csv-import"><i class="fas fa-file-import"></i> 匯入</button>
+      </div>
+    </div>
+
+    <!-- Add stock form — kept as fallback, hidden by default; drawer opens same form -->
+    <div class="card form-card" id="add-stock-card" hidden>
+      <h3>新增持股</h3>
+      <form id="add-stock-form" onsubmit="addStock(event)">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="stock-market">市場</label>
+            <select id="stock-market" required>
+              <option value="TW">🇹🇼 台股</option>
+              <option value="US">🇺🇸 美股</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="stock-symbol">股票代號</label>
+            <input type="text" id="stock-symbol" placeholder="例：2330 或 AAPL" required>
+          </div>
+          <div class="form-group">
+            <label for="stock-name">股票名稱</label>
+            <input type="text" id="stock-name" placeholder="例：台積電">
+          </div>
+          <div class="form-group">
+            <label id="shares-label" for="stock-shares">持股（張）</label>
+            <input type="number" id="stock-shares" step="0.001" min="0.001" placeholder="1" required>
+          </div>
+          <div class="form-group">
+            <label for="stock-cost">買入均價</label>
+            <input type="number" id="stock-cost" step="0.01" min="0.01" placeholder="100" required>
+          </div>
+          <div class="form-group">
+            <label for="stock-target">目標價（可留空）</label>
+            <input type="number" id="stock-target" step="0.01" min="0" placeholder="達到時會通知">
+          </div>
+          <div class="form-group">
+            <label for="stock-stoploss">停損價（可留空）</label>
+            <input type="number" id="stock-stoploss" step="0.01" min="0" placeholder="跌破時會通知">
+          </div>
+          <div class="form-group form-actions">
+            <button type="submit" class="btn btn-primary btn-add"><i class="fas fa-plus"></i> 新增</button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Manage table -->
+    <div class="card table-card">
+      <div class="card-head">
+        <div class="head-left">
+          <h3>目前持股</h3>
+        </div>
+      </div>
+      <div class="table-wrapper">
+        <table id="manage-table" class="sortable-table">
+          <thead>
+            <tr>
+              <th scope="col" class="th-code" data-sort-key="0" data-sort-type="text">代號</th>
+              <th scope="col" class="th-name" data-sort-key="1" data-sort-type="text">名稱</th>
+              <th scope="col" class="th-market" data-sort-key="2" data-sort-type="text">市場</th>
+              <th scope="col" class="th-num" data-sort-key="3" data-sort-type="num">持股</th>
+              <th scope="col" class="th-num" data-sort-key="4" data-sort-type="num">買入均價</th>
+              <th scope="col" class="th-num" title="達目標價會發通知">目標價 🎯</th>
+              <th scope="col" class="th-num" title="跌破會發通知">停損價 ⚠️</th>
+              <th scope="col" class="th-action">操作</th>
+            </tr>
+          </thead>
+          <tbody id="manage-tbody">
+            <tr class="empty-row"><td colspan="8">尚無持股</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================
+       PAGE · CHARTS
+  ========================== -->
+  <section id="page-charts" class="page" aria-labelledby="h1-charts">
+    <header class="page-header">
+      <div>
+        <h1 id="h1-charts">走勢圖 &amp; 技術指標</h1>
+        <p class="page-sub">游標移動顯示 OHLC</p>
+      </div>
+      <div class="page-actions">
+        <select id="chart-stock-select" class="chart-select">
+          <option value="">選擇股票</option>
+        </select>
+        <div class="segmented" id="period-segment">
+          <button class="period-btn active" data-period="1mo">1M</button>
+          <button class="period-btn" data-period="3mo">3M</button>
+          <button class="period-btn" data-period="6mo">6M</button>
+          <button class="period-btn" data-period="1y">1Y</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="charts-layout">
+      <div class="charts-main">
+        <div class="card chart-card">
+          <div class="card-head">
+            <div class="chart-legend">
+              <span><i class="dot dot-white"></i>Close</span>
+              <span><i class="dot dot-pink"></i>MA5</span>
+              <span><i class="dot dot-cyan"></i>MA20</span>
+            </div>
+            <span class="ohlc mono" id="ohlc-readout">O — · H — · L — · C —</span>
+          </div>
+          <div class="chart-container chart-container-lg">
+            <canvas id="price-chart" role="img" aria-label="股價走勢圖"></canvas>
+          </div>
+        </div>
+
+        <div class="card chart-card chart-sub">
+          <div class="card-head">
+            <div class="chart-legend">
+              <span><i class="dot dot-white"></i>MACD</span>
+              <span><i class="dot dot-cyan"></i>Signal</span>
+              <span><i class="dot dot-green"></i>Histogram +</span>
+              <span><i class="dot dot-red"></i>Histogram −</span>
+            </div>
+            <span class="mono muted-text">12 / 26 / 9</span>
+          </div>
+          <div class="chart-container chart-container-sub">
+            <canvas id="macd-chart" role="img" aria-label="MACD 技術指標圖"></canvas>
+          </div>
+        </div>
+
+        <div class="card chart-card chart-sub">
+          <div class="card-head">
+            <div class="chart-legend">
+              <span><i class="dot dot-purple"></i>RSI(14)</span>
+              <span class="mono muted-text">30 / 70 參考線</span>
+            </div>
+            <span class="mono muted-text">Wilder smoothing</span>
+          </div>
+          <div class="chart-container chart-container-sub">
+            <canvas id="rsi-chart" role="img" aria-label="RSI 相對強弱指標圖"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <aside class="chart-side">
+        <div class="side-block">
+          <div class="side-label">Current Price</div>
+          <div class="mono side-price" id="side-current-price">$—</div>
+          <div class="side-chips">
+            <span class="stat-chip stat-chip-neutral" id="side-chg">▲ —</span>
+            <span class="stat-chip stat-chip-neutral" id="side-chg-pct">—%</span>
+          </div>
+        </div>
+
+        <div class="side-block">
+          <div class="side-head">
+            <span>52W Range</span>
+            <span class="mono" id="side-52w-pct">— of range</span>
+          </div>
+          <div class="range-bar">
+            <div class="range-fill"></div>
+            <div class="range-handle" id="side-52w-handle" style="left:50%"></div>
+          </div>
+          <div class="range-scale mono">
+            <span id="side-52w-low">$—</span>
+            <span id="side-52w-high">$—</span>
+          </div>
+        </div>
+
+        <div class="side-block">
+          <div class="side-label">Technicals</div>
+          <div class="tech-indicators">
+            <div class="indicator-item">
+              <span class="indicator-label">MA5</span>
+              <span class="indicator-value mono" id="ind-ma5">--</span>
+            </div>
+            <div class="indicator-item">
+              <span class="indicator-label">MA20</span>
+              <span class="indicator-value mono" id="ind-ma20">--</span>
+            </div>
+            <div class="indicator-item">
+              <span class="indicator-label">RSI(14)</span>
+              <span class="indicator-value mono" id="ind-rsi">--</span>
+            </div>
+            <div class="indicator-item">
+              <span class="indicator-label">MACD</span>
+              <span class="indicator-value mono" id="ind-macd">--</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="side-block">
+          <div class="side-label">Signals</div>
+          <div class="signal-list" id="signal-list">
+            <div class="signal-row signal-muted"><span class="signal-dot"></span>選擇股票後顯示</div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ==========================
+       PAGE · NEWS
+  ========================== -->
+  <section id="page-news" class="page" aria-labelledby="h1-news"><header class="page-header"><div><h1 id="h1-news">新聞摘要</h1>
+        <p class="page-sub"><span id="news-count" class="mono">0</span> 則相關新聞</p>
+      </div>
+      <div class="page-actions">
+        <button class="btn btn-primary" onclick="fetchNews()"><i class="fas fa-sync-alt"></i> 更新新聞</button>
+      </div>
+    </header>
+
+    <div class="news-layout">
+      <div id="news-container" class="news-grid">
+        <div class="card news-placeholder">
+          <i class="fas fa-newspaper"></i>
+          <p>新增持股後，將自動載入相關新聞</p>
+        </div>
+      </div>
+
+      <aside class="news-filter">
+        <div class="card filter-block">
+          <div class="filter-label">依持股篩選</div>
+          <div class="filter-list" id="news-filter-list">
+            <div class="filter-empty">新增持股後顯示</div>
+          </div>
+        </div>
+        <div class="card filter-block">
+          <div class="filter-label">時間範圍</div>
+          <div class="segmented segmented-sm segmented-full">
+            <button class="seg-btn active">24H</button>
+            <button class="seg-btn">3D</button>
+            <button class="seg-btn">1W</button>
+            <button class="seg-btn">1M</button>
+          </div>
+        </div>
+        <div class="card filter-block">
+          <div class="filter-label">來源</div>
+          <div class="chip-cloud">
+            <span class="chip chip-on">Bloomberg</span>
+            <span class="chip chip-on">Reuters</span>
+            <span class="chip">MoneyDJ</span>
+            <span class="chip chip-on">DigiTimes</span>
+            <span class="chip">CNYES</span>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ==========================
+       PAGE · SERENITY
+  ========================== -->
+  <section id="page-serenity" class="page" aria-labelledby="h1-serenity"><header class="page-header serenity-header"><div><h1 id="h1-serenity"><i class="fas fa-brain"></i> Serenity 供應鏈透鏡</h1>
+        <p class="page-sub">@aleabitoreddit · AI/半導體供應鏈分析師</p>
+      </div>
+      <div class="serenity-metric">
+        <div class="serenity-metric-label">投組即時損益</div>
+        <div class="serenity-metric-val mono" id="serenity-pnl">$—</div>
+        <div class="serenity-metric-hint mono" id="serenity-pnl-pct">配置預算 —</div>
+      </div>
+    </header>
+
+    <!-- Hero -->
+    <div class="card serenity-hero">
+      <p class="serenity-desc">
+        核心策略：不買明顯的賣鏟人（NVDA）— 往供應鏈最上游追溯，找到超大規模客戶不計代價也要保住的「卡脖子」瓶頸點。
+        以下台股標的經 Serenity 12 條方法論 checklist 篩選，適合 <strong>8 萬元預算 / 3 個月持有 / 目標 +25%</strong> 的高波動操作。
+      </p>
+      <details class="serenity-disclaimer">
+        <summary><i class="fas fa-exclamation-triangle"></i> 展開免責聲明</summary>
+        <p>分析框架，非投資建議。Serenity 自報報酬率未經獨立驗證。高波動股單日可能跌 10%+。</p>
+      </details>
+    </div>
+
+    <!-- Calculator -->
+    <div class="card serenity-calc-bar">
+      <div class="calc-input-group">
+        <label for="serenity-budget">投入預算 · TWD</label>
+        <div class="calc-input">
+          <span class="mono calc-prefix">$</span>
+          <input type="number" id="serenity-budget" value="80000" min="10000" step="1000">
+        </div>
+      </div>
+      <div class="segmented">
+        <button class="seg-btn budget-preset" data-budget="50000">5萬</button>
+        <button class="seg-btn active budget-preset" data-budget="80000">8萬</button>
+        <button class="seg-btn budget-preset" data-budget="100000">10萬</button>
+        <button class="seg-btn budget-preset" data-budget="200000">20萬</button>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="calcSerenityAlloc()"><i class="fas fa-calculator"></i> 重新計算</button>
+
+      <div class="alloc-visual">
+        <div class="alloc-visual-head">
+          <span class="filter-label">配置比例</span>
+        </div>
+        <div class="alloc-bar" id="serenity-alloc-bar">
+          <!-- populated by app-enhancements.js from serenityStocks -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Allocation table (fed by app.js calcSerenityAlloc) -->
+    <div class="card table-card serenity-table">
+      <div class="card-head">
+        <div class="head-left"><h3>建議配置</h3></div>
+        <div class="mono muted-text">依信念等級加權</div>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col" class="th-name">標的</th>
+              <th scope="col" class="th-code">代號</th>
+              <th scope="col" class="th-num">比重</th>
+              <th scope="col" class="th-num">金額</th>
+              <th scope="col" class="th-num">股數(零股)</th>
+              <th scope="col">信念等級</th>
+            </tr>
+          </thead>
+          <tbody id="serenity-alloc-tbody">
+            <!-- populated by app.js calcSerenityAlloc() -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Methodology / Checklist -->
+    <div class="card serenity-methodology">
+      <div class="card-head">
+        <div class="head-left"><h3><i class="fas fa-clipboard-check"></i> Serenity Checklist · 篩選依據</h3></div>
+        <span class="mono muted-text">6 條方法論</span>
+      </div>
+      <div class="method-grid">
+        <div class="method-item"><i class="fas fa-link"></i><strong>瓶頸位置</strong><span>供應鏈唯一卡脖子點</span></div>
+        <div class="method-item"><i class="fas fa-users"></i><strong>Mag7 客戶</strong><span>超大規模雲端下單</span></div>
+        <div class="method-item"><i class="fas fa-eye-slash"></i><strong>機構低配</strong><span>分析師尚未定價</span></div>
+        <div class="method-item"><i class="fas fa-bolt"></i><strong>催化劑</strong><span>3 個月內事件</span></div>
+        <div class="method-item"><i class="fas fa-chart-line"></i><strong>GAAP 毛利</strong><span>真實毛利率支撐</span></div>
+        <div class="method-item"><i class="fas fa-shield-alt"></i><strong>稀釋風險</strong><span>無大型 ATM/SBC</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================
+       PAGE · MY HOLDINGS (from portfolio.json)
+  ========================== -->
+  <section id="page-myholdings" class="page" aria-labelledby="h1-myholdings"><header class="page-header"><div><h1 id="h1-myholdings"><i class="fas fa-briefcase"></i> 我的持倉</h1>
+        <p class="page-sub"><span id="holdings-last-updated">最後更新：--</span></p>
+      </div>
+    </header>
+
+    <div class="summary-cards">
+      <div class="card kpi-card">
+        <span class="kpi-label">總市值</span>
+        <span class="card-value num" id="my-total-value">$0</span>
+      </div>
+      <div class="card kpi-card">
+        <span class="kpi-label">總成本</span>
+        <span class="card-value num" id="my-total-cost">$0</span>
+      </div>
+      <div class="card kpi-card">
+        <span class="kpi-label">總損益</span>
+        <span class="card-value num" id="my-total-pnl">$0</span>
+      </div>
+      <div class="card kpi-card">
+        <span class="kpi-label">報酬率</span>
+        <span class="card-value num" id="my-total-pnl-pct">0%</span>
+      </div>
+    </div>
+
+    <div class="card table-card">
+      <div class="card-head"><div class="head-left"><h3>持倉明細</h3></div></div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col" class="th-code">代號</th>
+              <th scope="col" class="th-name">名稱</th>
+              <th scope="col" class="th-market">市場</th>
+              <th scope="col" class="th-num">持股</th>
+              <th scope="col" class="th-num">成本價</th>
+              <th scope="col" class="th-num">現價</th>
+              <th scope="col" class="th-num">市值</th>
+              <th scope="col" class="th-num">損益</th>
+              <th scope="col" class="th-num">報酬率</th>
+            </tr>
+          </thead>
+          <tbody id="my-holdings-tbody">
+            <tr class="empty-row"><td colspan="9">尚無持股紀錄，請告知秘書更新</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="head-left"><h3><i class="fas fa-exchange-alt"></i> Serenity 交叉比對</h3></div></div>
+      <div id="serenity-comparison">
+        <p class="empty-note">載入中...</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ============================================================
+     MOBILE BOTTOM TAB BAR (< 768)
+============================================================ -->
+<nav class="mobile-tabbar" role="navigation" aria-label="行動裝置導覽">
+  <button class="tab active" data-page="dashboard"><i class="fas fa-th-large"></i><span>總覽</span></button>
+  <button class="tab" data-page="portfolio"><i class="fas fa-wallet"></i><span>持股</span></button>
+  <button class="tab" data-page="charts"><i class="fas fa-chart-area"></i><span>走勢</span></button>
+  <button class="tab" data-page="news"><i class="fas fa-newspaper"></i><span>新聞</span><span class="tab-dot" hidden></span></button>
+  <button class="tab tab-myholdings" data-page="myholdings"><i class="fas fa-briefcase"></i><span>持倉</span></button>
+  <button class="tab tab-serenity" data-page="serenity"><i class="fas fa-brain"></i><span>Serenity</span></button>
+</nav>
+
+<!-- ============================================================
+     DRAWER — Add Stock (right slide-over)
+============================================================ -->
+<div class="drawer-overlay" id="drawer-overlay" hidden></div>
+<aside class="drawer" id="add-stock-drawer" hidden aria-hidden="true">
+  <div class="drawer-head">
+    <div>
+      <div class="drawer-eyebrow">Portfolio</div>
+      <h2>新增持股</h2>
+    </div>
+    <button class="icon-btn" id="drawer-close" aria-label="關閉"><i class="fas fa-times"></i></button>
+  </div>
+
+  <!-- Stepper -->
+  <div class="stepper">
+    <div class="step step-active"><span class="step-num">1</span><span>選股</span></div>
+    <div class="step-line"></div>
+    <div class="step"><span class="step-num">2</span><span>持倉 · 均價</span></div>
+  </div>
+
+  <div class="drawer-body">
+    <!-- Note: the actual form fields live in the portfolio page's #add-stock-form.
+         JS mirrors the drawer inputs into those fields before submit. -->
+    <div class="form-group">
+      <label>Market</label>
+      <div class="market-toggle" id="drawer-market">
+        <button class="market-opt market-opt-active" data-mkt="TW">🇹🇼 台股 TW</button>
+        <button class="market-opt" data-mkt="US">🇺🇸 美股 US</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="drawer-symbol">股票代號</label>
+      <input type="text" id="drawer-symbol" placeholder="例：2330">
+    </div>
+    <div class="form-group">
+      <label for="drawer-name">股票名稱（可選）</label>
+      <input type="text" id="drawer-name" placeholder="例：台積電">
+    </div>
+    <div class="form-row-2">
+      <div class="form-group">
+        <label id="drawer-shares-label" for="drawer-shares">持股（張）</label>
+        <input type="number" id="drawer-shares" step="0.001" min="0.001" placeholder="1">
+      </div>
+      <div class="form-group">
+        <label for="drawer-cost">買入均價</label>
+        <input type="number" id="drawer-cost" step="0.01" min="0.01" placeholder="100">
+      </div>
+    </div>
+    <div class="form-row-2">
+      <div class="form-group">
+        <label for="drawer-target">目標價 🎯 <span class="label-hint">可留空</span></label>
+        <input type="number" id="drawer-target" step="0.01" min="0" placeholder="達到時通知">
+      </div>
+      <div class="form-group">
+        <label for="drawer-stoploss">停損價 ⚠️ <span class="label-hint">可留空</span></label>
+        <input type="number" id="drawer-stoploss" step="0.01" min="0" placeholder="跌破時通知">
+      </div>
+    </div>
+    <p class="drawer-hint"><i class="fas fa-lightbulb"></i> 可貼上券商代號如 <code>2330.TW</code>，系統會自動去除後綴。</p>
+  </div>
+
+  <div class="drawer-foot">
+    <button class="btn btn-secondary" id="drawer-cancel">取消</button>
+    <button class="btn btn-primary" id="drawer-submit"><i class="fas fa-check"></i> 新增</button>
+  </div>
+</aside>
+
+<!-- ============================================================
+     ONBOARDING · Welcome modal + Tour
+============================================================ -->
+<div class="onb-backdrop" id="onb-backdrop" hidden></div>
+
+<!-- Welcome modal -->
+<div class="onb-welcome" id="onb-welcome" hidden role="dialog" aria-labelledby="onb-welcome-title">
+  <div class="onb-welcome-hero">
+    <div class="onb-hero-logo">S</div>
+    <span class="onb-hero-tag">SERENITY EDITION</span>
+  </div>
+  <div class="onb-welcome-body">
+    <h2 id="onb-welcome-title">歡迎使用 StockFolio</h2>
+    <p class="onb-lead">台股 + 美股混合投組追蹤 · 內建 Serenity 供應鏈透鏡策略。花 <strong>90 秒</strong> 認識關鍵功能，之後隨時可從左下角「設定」重啟。</p>
+    <ul class="onb-highlights">
+      <li>
+        <span class="onb-hi-icon onb-hi-blue"><i class="fas fa-chart-line"></i></span>
+        <div><strong>數字優先的儀表板</strong><span>總市值、今日變動、報酬率一眼看完</span></div>
+      </li>
+      <li>
+        <span class="onb-hi-icon onb-hi-green"><i class="fas fa-signal"></i></span>
+        <div><strong>技術指標 + 新聞情緒</strong><span>MA / MACD / RSI 疊圖，新聞依情緒分類</span></div>
+      </li>
+      <li class="onb-hi-featured">
+        <span class="onb-hi-icon onb-hi-purple"><i class="fas fa-brain"></i></span>
+        <div><strong>Serenity 供應鏈透鏡 <span class="nav-tag">NEW</span></strong><span>AI/半導體高信念選股 + 配置計算器</span></div>
+      </li>
+    </ul>
+    <div class="onb-actions">
+      <button class="btn btn-secondary" id="onb-skip">略過，直接開始</button>
+      <button class="btn btn-primary btn-lg" id="onb-start"><i class="fas fa-arrow-right"></i> 跟我逛一圈 (90s)</button>
+    </div>
+    <label class="onb-remember">
+      <input type="checkbox" id="onb-never">
+      下次啟動不要顯示（可從「設定 → 導覽」重啟）
+    </label>
+  </div>
+</div>
+
+<!-- Tour tooltip -->
+<div class="onb-tooltip" id="onb-tooltip" hidden role="dialog">
+  <div class="onb-tt-arrow"></div>
+  <div class="onb-tt-head">
+    <span class="onb-tt-badge"><span id="onb-tt-step">1 / 5</span></span>
+    <span class="onb-tt-section">Dashboard tour</span>
+    <button class="icon-btn onb-tt-close" id="onb-tt-close" aria-label="關閉"><i class="fas fa-times"></i></button>
+  </div>
+  <h3 id="onb-tt-title">—</h3>
+  <p id="onb-tt-body">—</p>
+  <div class="onb-tt-progress" id="onb-tt-progress"></div>
+  <div class="onb-tt-actions">
+    <button class="btn btn-ghost btn-sm" id="onb-tt-skip">略過導覽</button>
+    <div class="onb-tt-nav">
+      <button class="btn btn-secondary btn-sm" id="onb-tt-back">← 上一步</button>
+      <button class="btn btn-primary btn-sm" id="onb-tt-next">下一步 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings popover -->
+<div class="settings-popover" id="settings-popover" hidden role="menu">
+  <div class="settings-head">
+    <div class="settings-eyebrow">Settings</div>
+    <div class="settings-title">偏好與說明</div>
+  </div>
+  <div class="settings-row settings-row-featured">
+    <div class="settings-row-main">
+      <span class="settings-icon settings-icon-purple"><i class="fas fa-compass"></i></span>
+      <div>
+        <div class="settings-name">首次使用導覽</div>
+        <div class="settings-desc">5 個步驟 · 約 90 秒</div>
+      </div>
+      <button class="btn btn-sm btn-purple" id="restart-tour"><i class="fas fa-redo"></i> 重新啟動</button>
+    </div>
+    <label class="settings-toggle-row">
+      <span class="toggle" data-on="true"><span class="toggle-thumb"></span></span>
+      登入時自動顯示（若尚未完成）
+    </label>
+  </div>
+  <div class="settings-row">
+    <span class="settings-icon"><i class="fas fa-bell"></i></span>
+    <div class="settings-name">價格提醒</div>
+    <span class="toggle" data-on="true"><span class="toggle-thumb"></span></span>
+  </div>
+  <div class="settings-row">
+    <span class="settings-icon"><i class="fas fa-sync-alt"></i></span>
+    <div class="settings-name">自動更新頻率</div>
+    <span class="mono settings-val">5 min ▾</span>
+  </div>
+  <div class="settings-row">
+    <span class="settings-icon"><i class="fas fa-envelope"></i></span>
+    <div class="settings-name">顯示已讀新聞</div>
+    <span class="toggle" data-on="false"><span class="toggle-thumb"></span></span>
+  </div>
+  <div class="settings-row settings-row-plain">
+    <span class="settings-icon"><i class="fas fa-info-circle"></i></span>
+    <div class="settings-name">關於 StockFolio · v1.0</div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script src="app-enhancements.js"></script>
+</body>
+</html>

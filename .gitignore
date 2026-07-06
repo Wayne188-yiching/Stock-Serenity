@@ -1,0 +1,17 @@
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*~
+
+# Local
+*.log
+node_modules/
+
+# Private — real portfolio holdings, never commit
+portfolio.json

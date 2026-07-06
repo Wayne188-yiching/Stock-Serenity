@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stock-Serenity UI/UX 重設計 Brief｜Claude Design Prompts</title>
+<style>
+:root{
+  --bg:#0a0e17; --panel:#111827; --panel-2:#1a2333; --border:#243149;
+  --text:#e6edf7; --muted:#8a95a8; --accent:#a78bfa; --accent-2:#f472b6;
+  --code-bg:#0a1120; --code-border:#1e2a44;
+  --success:#10b981; --warning:#f59e0b;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:'Inter','PingFang TC','Microsoft JhengHei',system-ui,sans-serif;line-height:1.65;font-size:15px}
+.container{max-width:1080px;margin:0 auto;padding:48px 32px}
+header{border-bottom:1px solid var(--border);padding-bottom:28px;margin-bottom:40px}
+h1{font-size:32px;margin:0 0 8px;background:linear-gradient(135deg,#a78bfa,#f472b6);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:700}
+.subtitle{color:var(--muted);font-size:15px}
+.meta{display:flex;gap:16px;margin-top:16px;flex-wrap:wrap}
+.meta span{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--muted)}
+h2{font-size:22px;margin:48px 0 16px;border-left:3px solid var(--accent);padding-left:12px}
+h3{font-size:17px;margin:24px 0 8px;color:#c9d4e6}
+h4{font-size:14px;margin:16px 0 6px;color:var(--accent-2);text-transform:uppercase;letter-spacing:.05em}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:22px 24px;margin-bottom:20px}
+.card-accent{border-left:3px solid var(--accent)}
+.badge{display:inline-block;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:600;margin-right:8px;vertical-align:middle;letter-spacing:.03em}
+.b-a{background:rgba(167,139,250,.15);color:#c4b5fd;border:1px solid rgba(167,139,250,.35)}
+.b-b{background:rgba(244,114,182,.15);color:#f9a8d4;border:1px solid rgba(244,114,182,.35)}
+.b-c{background:rgba(16,185,129,.15);color:#5ee6ba;border:1px solid rgba(16,185,129,.35)}
+.prompt-label{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--accent-2);margin:14px 0 6px;font-weight:600}
+pre{background:var(--code-bg);border:1px solid var(--code-border);border-radius:8px;padding:16px;overflow-x:auto;margin:0;font-family:'JetBrains Mono','Menlo','Consolas',monospace;font-size:13px;line-height:1.55;color:#d0dcf2;white-space:pre-wrap;word-wrap:break-word}
+.toc{background:var(--panel-2);border:1px solid var(--border);border-radius:10px;padding:20px 24px;margin-bottom:40px}
+.toc h3{margin-top:0}
+.toc ol{margin:8px 0;padding-left:22px}
+.toc li{margin:4px 0}
+.toc a{color:var(--accent);text-decoration:none}
+.toc a:hover{text-decoration:underline}
+.workflow{background:linear-gradient(135deg,rgba(167,139,250,.08),rgba(244,114,182,.06));border:1px solid rgba(167,139,250,.25);border-radius:10px;padding:20px 24px;margin:24px 0}
+.workflow h3{margin-top:0;color:var(--accent)}
+.workflow ol{margin:8px 0;padding-left:22px}
+.workflow li{margin:6px 0}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:16px 0}
+.swatch{border-radius:8px;padding:14px;border:1px solid var(--border)}
+.swatch-color{width:100%;height:40px;border-radius:6px;margin-bottom:8px;border:1px solid rgba(255,255,255,.08)}
+.swatch-label{font-size:12px;color:var(--muted);font-family:monospace}
+.swatch-name{font-size:13px;font-weight:600;margin-bottom:2px}
+.checklist{list-style:none;padding:0;margin:12px 0}
+.checklist li{padding:6px 0;padding-left:24px;position:relative;font-size:14px}
+.checklist li:before{content:"✓";position:absolute;left:0;color:var(--success);font-weight:700}
+.principle{padding:14px 16px;background:rgba(167,139,250,.06);border-left:3px solid var(--accent);border-radius:6px;margin:12px 0}
+.principle-title{font-weight:600;margin-bottom:4px;color:#c4b5fd}
+.warn{padding:14px 16px;background:rgba(245,158,11,.08);border-left:3px solid var(--warning);border-radius:6px;margin:16px 0;font-size:14px}
+kbd{background:var(--code-bg);border:1px solid var(--code-border);border-radius:4px;padding:1px 6px;font-family:monospace;font-size:12px;color:#c9d4e6}
+table{width:100%;border-collapse:collapse;margin:12px 0}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--border);font-size:13px}
+th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+.copy-hint{font-size:11px;color:var(--muted);text-align:right;margin-top:4px}
+.step-tag{display:inline-block;background:var(--accent);color:#0a0e17;font-weight:700;border-radius:50%;width:22px;height:22px;text-align:center;line-height:22px;font-size:12px;margin-right:8px}
+footer{margin-top:64px;padding-top:24px;border-top:1px solid var(--border);color:var(--muted);font-size:13px;text-align:center}
+.templates{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:14px 0}
+.tpl{background:var(--panel-2);border:1px solid var(--border);border-radius:8px;padding:12px 8px;text-align:center;font-size:12px}
+.tpl.active{border-color:var(--accent);background:rgba(167,139,250,.1);color:#c4b5fd;font-weight:600}
+.tpl-icon{font-size:20px;margin-bottom:4px;display:block}
+.goal-block{background:linear-gradient(135deg,rgba(244,114,182,.08),rgba(167,139,250,.06));border:1px solid rgba(244,114,182,.3);border-radius:10px;padding:18px 22px;margin:20px 0 28px;position:relative}
+.goal-block:before{content:"/goal";position:absolute;top:-11px;left:16px;background:var(--bg);color:var(--accent-2);font-family:monospace;font-size:12px;font-weight:700;padding:2px 10px;border:1px solid rgba(244,114,182,.4);border-radius:4px;letter-spacing:.05em}
+.goal-block p{margin:0;font-size:14px;line-height:1.65;color:#d0dcf2}
+.goal-block .criteria{display:block;margin-top:10px;padding-top:10px;border-top:1px dashed rgba(244,114,182,.2);font-size:12px;color:var(--muted)}
+.phase-map{background:var(--panel-2);border:1px solid var(--border);border-radius:10px;padding:20px 24px;margin-bottom:32px}
+.phase-map table{width:100%;border-collapse:collapse;margin-top:10px}
+.phase-map th,.phase-map td{text-align:left;padding:8px 10px;font-size:13px;border-bottom:1px solid var(--border)}
+.phase-map th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+.phase-map td:first-child{font-weight:600;color:var(--accent-2);white-space:nowrap}
+.phase-map .this-doc{background:rgba(244,114,182,.06)}
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>Stock-Serenity UI/UX 重設計 Brief</h1>
+  <div class="subtitle">給 Claude Design（Anthropic 原生設計工具）的完整重設計簡報，附可複製提示詞</div>
+  <div class="meta">
+    <span>對象：Stock Portfolio Dashboard</span>
+    <span>工具：Claude Design（Beta）</span>
+    <span>建議模型：Claude Opus 4.8</span>
+    <span>更新：2026-07-06</span>
+  </div>
+</header>
+
+<div class="toc">
+  <h3>目錄</h3>
+  <ol>
+    <li><a href="#phase-map">四階段整體 Phase 對照</a></li>
+    <li><a href="#workflow">Claude Design 執行流程</a></li>
+    <li><a href="#context">產品背景與使用者</a></li>
+    <li><a href="#principles">設計原則與方向</a></li>
+    <li><a href="#tokens">Design System 規格</a></li>
+    <li><a href="#pages">頁面級重設計需求</a></li>
+    <li><a href="#components">關鍵元件規格</a></li>
+    <li><a href="#prompt-ds">Prompt A｜建立 Design System（Phase 2）</a></li>
+    <li><a href="#prompt-proto">Prompt B｜產出五頁 Mockup（Phase 2）</a></li>
+    <li><a href="#prompt-iterate">Prompt C｜迭代與微調（Phase 2）</a></li>
+    <li><a href="#prompt-export">Prompt D｜匯出後給 Claude Code 落地（Phase 3 起點）</a></li>
+  </ol>
+</div>
+
+<div class="phase-map" id="phase-map">
+  <h3 style="margin-top:0">🗺️ 四階段整體 Phase 對照</h3>
+  <p style="color:var(--muted);font-size:13px;margin:6px 0 0">此文件涵蓋 Phase 2（設計）+ Phase 3 前半（Prompt D 落地）。Phase 1 / 3 後半 / 4 的 code 優化請看 <code>OPTIMIZATION_GUIDE.html</code>。</p>
+  <table>
+    <tr><th>Phase</th><th>範疇</th><th>對應本文件</th><th>時長</th></tr>
+    <tr><td>Phase 1</td><td>資安 / 穩定性（純邏輯層）</td><td>見 OPTIMIZATION_GUIDE.html P1</td><td>1–2h</td></tr>
+    <tr class="this-doc"><td>Phase 2</td><td>Claude Design 重設計 UI/UX</td><td>Prompt A + B + C</td><td>半天–1 天</td></tr>
+    <tr class="this-doc"><td>Phase 3 前半</td><td>設計落地回程式碼</td><td>Prompt D</td><td>0.5 天</td></tr>
+    <tr><td>Phase 3 後半</td><td>資料層四項優化</td><td>見 OPTIMIZATION_GUIDE.html P2</td><td>1 天</td></tr>
+    <tr><td>Phase 4</td><td>體驗打磨</td><td>見 OPTIMIZATION_GUIDE.html P3</td><td>1 天</td></tr>
+  </table>
+</div>
+
+<div class="workflow" id="workflow">
+  <h3>📋 Claude Design 執行流程</h3>
+  <p style="margin:0 0 12px;color:var(--muted);font-size:13px">依你截圖看到的介面，最合理的路徑是：</p>
+  <ol>
+    <li><span class="step-tag">1</span><strong>建 Design System</strong> — 在首頁 tab 切到「Design systems」，用 <em>Prompt A</em> 產出配色 / 字型 / 元件庫（存起來重複用）</li>
+    <li><span class="step-tag">2</span><strong>開新 Prototype</strong> — 回首頁點「Prototype」模板，Design system 選剛才建的那份，Model 選 Claude Opus 4.8，附上 <code>index.html</code>（點左下 + 上傳）</li>
+    <li><span class="step-tag">3</span><strong>下 Prompt B</strong> — 讓它產出五頁 mockup（Dashboard / Portfolio / Charts / News / Serenity）</li>
+    <li><span class="step-tag">4</span><strong>迭代</strong> — 用 <em>Prompt C</em> 針對每頁微調（例如「Serenity 頁的推薦卡片改成 expandable rows」）</li>
+    <li><span class="step-tag">5</span><strong>匯出</strong> — Claude Design 應該可以匯出 HTML/CSS 或截圖；把匯出結果 + <em>Prompt D</em> 交給 Claude Code 對回你的 <code>index.html</code> / <code>styles.css</code>，保留 <code>app.js</code> 契約</li>
+  </ol>
+  <div class="templates">
+    <div class="tpl active"><span class="tpl-icon">📱</span>Prototype<br><span style="color:var(--muted);font-size:11px">✓ 用這個</span></div>
+    <div class="tpl"><span class="tpl-icon">🎞️</span>Slides</div>
+    <div class="tpl"><span class="tpl-icon">📄</span>Document</div>
+    <div class="tpl"><span class="tpl-icon">✏️</span>Wireframe<br><span style="color:var(--muted);font-size:11px">初期草稿可用</span></div>
+    <div class="tpl"><span class="tpl-icon">▶️</span>Animation</div>
+  </div>
+  <p style="margin:8px 0 0;color:var(--muted);font-size:12px">💡 若想先看骨架再上色，可先跑 Wireframe 模板，敲定 layout 後再切 Prototype 上高保真樣式。</p>
+</div>
+
+<div class="warn">
+  <strong>關於 Claude Design 的注意事項：</strong>它是 Anthropic 的獨立產品，不需要 Figma 授權。上傳 <code>index.html</code> 讓它讀取現有結構會大幅提升重設計品質（因為它知道你 DOM 契約是什麼）。<code>&lt;/&gt;</code> 圖示看起來可以貼 code snippet，用來給參考程式碼很好用。
+</div>
+
+<h2 id="context">1. 產品背景與使用者</h2>
+
+<div class="card card-accent">
+  <h4>產品定位</h4>
+  <p>台股 + 美股混合投資組合追蹤儀表板，特色是內建「Serenity 供應鏈透鏡」— 針對 AI/半導體高波動選股的策略頁面。個人使用工具，非 SaaS。</p>
+
+  <h4>核心使用者</h4>
+  <p>零售投資者，熟悉 Bloomberg / TradingView 語彙，同時關注長線持股與短線題材股。使用場景：早晨開盤前檢視、盤後結算、週末重新配置。</p>
+
+  <h4>目前痛點</h4>
+  <ul class="checklist">
+    <li>資訊密度不夠 —— 桌面版空間浪費，關鍵數字（總損益 / 報酬率）視覺權重與市值相同</li>
+    <li>圖表與表格風格未統一，深色底色偏中性，缺乏「金融終端」的專業感</li>
+    <li>Serenity 頁卡片太長，滾動負擔重；配置比例的條狀圖辨識度低</li>
+    <li>行動裝置未優化 —— sidebar 佔滿螢幕</li>
+    <li>沒有清楚的資訊層級（primary / secondary metric 不分）</li>
+  </ul>
+</div>
+
+<h2 id="principles">2. 設計原則與方向</h2>
+
+<div class="grid-2">
+  <div class="card">
+    <h3><span class="badge b-a">主張</span>「Reuters Workstation × Linear」</h3>
+    <p>資訊密度接近 Bloomberg / Reuters 終端，但視覺俐落度向 Linear、Notion、Vercel 這類現代 SaaS 靠攏。專業但不擁擠。</p>
+  </div>
+  <div class="card">
+    <h3><span class="badge b-a">氛圍</span>Dark-first · Data-forward</h3>
+    <p>純深色主題（不做 light mode），數字用等寬字級 tabular figures，圖表色板飽和但不刺眼。避免 glassmorphism / neumorphism。</p>
+  </div>
+</div>
+
+<div class="principle">
+  <div class="principle-title">Principle 1 · Numbers are the hero</div>
+  金額、報酬率、市值 —— 這些數字要用最大字級、tabular-nums、對齊右邊。所有次要資訊（icon、label）都要弱化。
+</div>
+<div class="principle">
+  <div class="principle-title">Principle 2 · 綠漲、紅跌（沿用西方慣例，維持既有）</div>
+  台股習慣紅漲綠跌，但既有 codebase 用 green/red = profit/loss 的西方慣例。<strong>統一維持既有：綠漲、紅跌</strong>，避免使用者混淆；色階用偏青綠（#10b981）而非螢光綠。
+</div>
+<div class="principle">
+  <div class="principle-title">Principle 3 · 8pt grid · zero magic numbers</div>
+  所有 spacing 用 4 / 8 / 12 / 16 / 24 / 32 / 48 / 64。所有 border-radius 用 4 / 6 / 10 / 16。禁止 7px、13px、23px 這類 magic number。
+</div>
+<div class="principle">
+  <div class="principle-title">Principle 4 · Progressive disclosure</div>
+  Dashboard 一眼看完；細節（技術指標、Serenity checklist）點開才顯示。避免所有東西同時佔螢幕。
+</div>
+
+<h2 id="tokens">3. Design System 規格</h2>
+
+<div class="card">
+  <h4>色彩系統（Semantic）</h4>
+  <div class="grid-3">
+    <div class="swatch"><div class="swatch-color" style="background:#0a0e17"></div><div class="swatch-name">bg/base</div><div class="swatch-label">#0a0e17</div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#111827"></div><div class="swatch-name">bg/surface</div><div class="swatch-label">#111827</div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#1a2333"></div><div class="swatch-name">bg/elevated</div><div class="swatch-label">#1a2333</div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#243149"></div><div class="swatch-name">border/subtle</div><div class="swatch-label">#243149</div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#e6edf7"></div><div class="swatch-name" style="color:#0a0e17">text/primary</div><div class="swatch-label">#e6edf7</div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#8a95a8"></div><div class="swatch-name">text/muted</div><div class="swatch-label">#8a95a8</div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#10b981"></div><div class="swatch-name">state/profit</div><div class="swatch-label">#10b981</div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#ef4444"></div><div class="swatch-name">state/loss</div><div class="swatch-label">#ef4444</div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#5b9dff"></div><div class="swatch-name">accent/primary</div><div class="swatch-label">#5b9dff</div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#a78bfa"></div><div class="swatch-name">accent/serenity</div><div class="swatch-label">#a78bfa</div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#f59e0b"></div><div class="swatch-name">state/warn</div><div class="swatch-label">#f59e0b</div></div>
+    <div class="swatch"><div class="swatch-color" style="background:#22d3ee"></div><div class="swatch-name">accent/info</div><div class="swatch-label">#22d3ee</div></div>
+  </div>
+
+  <h4>字型</h4>
+  <table>
+    <tr><th>用途</th><th>Family</th><th>Weight</th><th>Size / LH</th></tr>
+    <tr><td>UI / 中文</td><td>Inter + Noto Sans TC</td><td>400/500/600</td><td>14 / 22</td></tr>
+    <tr><td>數字 tabular</td><td>Inter tabular-nums 或 JetBrains Mono</td><td>500/600</td><td>依情境</td></tr>
+    <tr><td>Display（主數字）</td><td>Inter tabular-nums</td><td>700</td><td>36 / 42</td></tr>
+    <tr><td>Metric label</td><td>Inter</td><td>500</td><td>11 / 16 uppercase 0.05em</td></tr>
+  </table>
+
+  <h4>間距 & 圓角</h4>
+  <table>
+    <tr><th>Token</th><th>值</th><th>用途</th></tr>
+    <tr><td>space/xs–xl</td><td>4 / 8 / 12 / 16 / 24 / 32 / 48 / 64</td><td>統一使用</td></tr>
+    <tr><td>radius/sm–lg</td><td>4 / 10 / 16</td><td>badge / card / modal</td></tr>
+  </table>
+</div>
+
+<h2 id="pages">4. 頁面級重設計需求</h2>
+
+<div class="card">
+  <h3><span class="badge b-a">Page 1</span>Dashboard 總覽</h3>
+  <ul class="checklist">
+    <li>頂部 4 顆 KPI card：總市值（primary，最大）· 今日變動（新增）· 總損益 · 報酬率</li>
+    <li>KPI 卡片內含 mini sparkline（近 30 日），讓數字有 context</li>
+    <li>中段左 60% 資產淨值折線圖 · 右 40% 持股配置 donut</li>
+    <li>Holdings table 改為密集列樣式（行高 36px、hover、右對齊、tabular-nums）</li>
+    <li>移除「損益分佈」bar chart（重複資訊，整併進 table 的 mini bar）</li>
+    <li>Holdings row 可展開，inline 顯示該股 30 日走勢</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h3><span class="badge b-a">Page 2</span>Portfolio 持股管理</h3>
+  <ul class="checklist">
+    <li>新增持股改為右側 Slide-over Drawer（點大按鈕觸發）</li>
+    <li>Drawer 分兩步：市場 + 代號 autocomplete → 持股 / 均價 / 目標價 / 停損</li>
+    <li>持股列表加行內編輯（點列進入編輯 mode）</li>
+    <li>頂部 action bar：搜尋 · 篩選 chip · 匯出 · 匯入</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h3><span class="badge b-a">Page 3</span>Charts 走勢圖</h3>
+  <ul class="checklist">
+    <li>三 stack：主 price chart（含 MA5/MA20 overlay）· MACD subplot · RSI subplot（畫 30/70 參考線）</li>
+    <li>右側 fixed 面板 280px：當前價 display/xl · 日漲跌 chip · 52W range slider · 技術指標 grid</li>
+    <li>期間切換改 segmented control（1M / 3M / 6M / 1Y / MAX）</li>
+    <li>加 crosshair，游標移動顯示當日 OHLC</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h3><span class="badge b-a">Page 4</span>News 新聞</h3>
+  <ul class="checklist">
+    <li>兩欄 masonry：左新聞 timeline，右 filter panel（依持股 tag 過濾）</li>
+    <li>每張 card：來源 logo · 標題 · 時間 · 相關股票 chip · 情緒指示（正/中/負，可選功能）</li>
+    <li>加閱讀進度 dot（已讀 / 未讀）</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h3><span class="badge b-b">Page 5</span>Serenity 供應鏈透鏡</h3>
+  <ul class="checklist">
+    <li>Hero 卡：策略描述 + 摺疊免責聲明</li>
+    <li>五檔推薦股改為 table + expandable rows：預設只看代號/名稱/信念/配置/現價/變動；展開才看論點 / metrics / checklist</li>
+    <li>配置計算器置頂，即時算金額 / 股數</li>
+    <li>配置比例視覺化：stacked bar + treemap 切換</li>
+    <li>信念等級用彩色 tier badge（S / A / B / Core）</li>
+    <li>Serenity Checklist 六格改為 icon row（水平）</li>
+  </ul>
+</div>
+
+<h2 id="components">5. 關鍵元件規格</h2>
+
+<div class="card">
+  <h3>KpiCard</h3>
+  <p style="color:var(--muted);font-size:13px">Props: label · value · change · changePercent · sparklineData · variant (primary | default) · trend (up | down | flat)</p>
+  <ul class="checklist">
+    <li>Primary variant：value 36px；其他 28px</li>
+    <li>Change chip：+2.3% / −1.1%，green/red 10% opacity 底色</li>
+    <li>Sparkline 高 32px，僅線不畫點</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h3>HoldingsTable</h3>
+  <ul class="checklist">
+    <li>Row 高 40px、hover 背景 #1a2333</li>
+    <li>數字欄 tabular-nums 右對齊</li>
+    <li>盈虧欄同時顯示金額與 % chip</li>
+    <li>行首市場 chip（🇹🇼TW / 🇺🇸US）· 行尾預留 40px 給展開箭頭</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h3>StockTierBadge</h3>
+  <ul class="checklist">
+    <li>S：gold-orange 漸層 · 「⭐ 最高信念」</li>
+    <li>A：紫色 · 「🔥 高信念」</li>
+    <li>B：藍色 · 「📈 中高」</li>
+    <li>Core：綠色 · 「🛡️ 底倉」</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h3>Sidebar / Nav</h3>
+  <ul class="checklist">
+    <li>Desktop：220px 寬，item 40px 高，active 左側 3px 邊條 + 8% 背景</li>
+    <li>Tablet（&lt; 1024）：收 64px icon-only，hover tooltip</li>
+    <li>Mobile（&lt; 768）：改 bottom tab bar 56px</li>
+  </ul>
+</div>
+
+<h2 id="prompt-ds">6. Prompt A｜先在 Claude Design 建立 Design System</h2>
+
+<div class="goal-block">
+  <p>在 Claude Design 產出 Stock-Serenity 的高保真重設計，涵蓋五個桌面頁面 + 一個手機頁面，遵循「Reuters Workstation × Linear」風格。此 Goal 涵蓋 Prompt A + B + C 三段。
+  <span class="criteria">✓ 完成標準：Design system「Stock-Serenity DS」已建立並包含 12 個 component 全部 variants · 五頁 Frame 通過使用者 review · 所有既有 DOM id/class 契約在設計中被保留 · 可匯出 HTML/CSS 或截圖交接給 Claude Code</span>
+</p></div>
+
+<div class="card">
+  <p style="color:var(--muted);font-size:13px">介面操作：首頁 → 切到 <strong>Design systems</strong> tab → 建立新 DS → 貼下面提示詞。建好後這份 DS 可以在後續所有 project 選用。</p>
+  <div class="prompt-label">▸ 貼給 Claude Design</div>
+<pre>幫我建立一個名為「Stock-Serenity DS」的暗色金融儀表板設計系統，用於股票投資組合追蹤 app（台股 + 美股）。
+
+=== 品牌氛圍 ===
+「Reuters Workstation × Linear」：專業金融終端的資訊密度 + 現代 SaaS（Linear/Notion/Vercel）的視覺俐落。純深色主題，不做 light mode。Data-forward，數字是主角。
+
+=== Color Tokens（semantic 命名）===
+bg/base #0a0e17
+bg/surface #111827
+bg/elevated #1a2333
+border/subtle #243149
+border/strong #2f3f5c
+text/primary #e6edf7
+text/muted #8a95a8
+text/dim #5c6577
+state/profit #10b981（綠 = 漲、獲利）
+state/loss #ef4444（紅 = 跌、虧損）
+state/warn #f59e0b
+state/info #22d3ee
+accent/primary #5b9dff
+accent/serenity #a78bfa
+accent/pink #f472b6
+tier/s 漸層 #fbbf24 → #f97316
+tier/a #a78bfa
+tier/b #5b9dff
+tier/core #10b981
+
+=== Typography ===
+UI + 中文：Inter + Noto Sans TC，weights 400/500/600
+數字（一律 tabular-nums）：Inter 或 JetBrains Mono
+Scale:
+- display/xl 36/42 700（主 KPI 數字）
+- heading/lg 22/28 600（page title）
+- heading/md 17/24 600（section title）
+- body/md 14/22 400
+- body/sm 13/20 400
+- label/xs 11/16 500 uppercase 0.05em tracking（metric label）
+- mono/lg 20/28 600 tabular（次要數字）
+- mono/md 14/20 500 tabular（表格數字）
+
+=== Spacing scale ===
+4 / 8 / 12 / 16 / 24 / 32 / 48 / 64
+
+=== Radius scale ===
+4（badge/tag）· 10（card/button）· 16（modal/drawer）
+
+=== Components 要包含 ===
+1. KpiCard（variants: primary/default, trend up/down/flat）
+2. HoldingsRow（default/hover/expanded）
+3. StockTierBadge（S/A/B/Core）
+4. SegmentedControl（sm/md, default/active）
+5. Sidebar NavItem（default/active/hover）
+6. Sparkline（up/down/flat）
+7. Drawer（右側 slide-over）
+8. StatChip（profit/loss/neutral）
+9. Button（primary/secondary/ghost/destructive × sm/md/lg）
+10. IconButton（sm/md, default/hover/active）
+11. Input / Select（default/focus/error/disabled）
+12. Toast（success/error/info/warn）
+
+輸出：完整可複用的 DS，包含 color palette、type scale、spacing 展示、每個 component 的 variants 展示頁。</pre>
+  <div class="copy-hint">💡 建完後，主頁 Design system 選單就會出現「Stock-Serenity DS」</div>
+</div>
+
+<h2 id="prompt-proto">7. Prompt B｜用 Prototype 模板產出五頁 Mockup</h2>
+
+<div class="card">
+  <p style="color:var(--muted);font-size:13px">介面操作：首頁 → 點 <strong>Prototype</strong> 模板 → Design system 下拉選「Stock-Serenity DS」→ 點左下 <kbd>+</kbd> 上傳你的 <code>index.html</code>（讓它讀既有 DOM 契約）→ 貼提示詞 → 送出。</p>
+  <div class="prompt-label">▸ 貼給 Claude Design（已附上 index.html）</div>
+<pre>我上傳的 index.html 是現有的 Stock Portfolio Dashboard。請沿用它的功能結構（5 個頁面、所有既有 id 與 class 契約）重新設計 UI/UX，使用剛才建立的「Stock-Serenity DS」。輸出五個 desktop viewport (1440 × 900) frames + 一個 mobile frame。
+
+保留原本的 id/class 不變（因為之後要把設計對回 code）：
+- id: total-value / total-cost / total-pnl / total-pnl-pct / holdings-tbody / manage-tbody / allocation-chart / pnl-chart / price-chart / chart-stock-select / news-container / serenity-alloc-tbody / serenity-budget
+- data-page / data-period 屬性保留
+
+=== Frame 1：Dashboard 總覽（1440×900）===
+Sidebar 220px + 主區 padding 32px
+- Page header：H1「投資組合總覽」+ [ 更新數據 ] primary + [ 匯出 ] ghost
+- Row 1：4 顆 KpiCard 等寬
+  - 總市值（primary variant，最大字，含 30d sparkline）
+  - 今日變動（新增，顯示 +$X,XXX / +1.23%）
+  - 總損益
+  - 報酬率
+- Row 2：左 60% 資產淨值折線圖 card（近 90 日，兩條線：市值 & 成本）+ 右 40% 持股配置 donut
+- Row 3：Holdings table 完整寬度，10 列示例資料，行高 40，右對齊 tabular-nums，行首市場 chip
+- 移除既有的損益分佈 bar chart
+
+=== Frame 2：Portfolio 持股管理 ===
+- Header：H1「持股管理」+ 右側 [ + 新增持股 ] primary
+- Action bar：搜尋 input + 篩選 chips（全部/台股/美股）+ [ 匯出 ][ 匯入 ] ghost
+- Holdings table with 行內編輯示意（其中一列展開為 edit mode）
+- 右側 Drawer overlay（顯示已打開狀態）：兩步驟 stepper 表單
+
+=== Frame 3：Charts 走勢圖 ===
+- Header + stock select + SegmentedControl (1M/3M/6M/1Y/MAX)
+- 主 price chart 高 400（含 MA5/MA20 overlay，畫 crosshair 示意）
+- MACD subplot 高 120
+- RSI subplot 高 120（畫 30/70 水平參考線）
+- 右側 fixed panel 280px：當前價 display/xl · 日漲跌 chip · 52W range slider · 技術指標 grid（MA5/MA20/RSI/MACD）
+
+=== Frame 4：News 新聞 ===
+- 左 timeline 8 張 news card：來源 logo · 標題 · 時間 · 相關股票 chip · 情緒指示（正/中/負）· 已讀 dot
+- 右 filter panel 280px：持股 tag checkbox list · 情緒 filter · 時間 range
+
+=== Frame 5：Serenity 供應鏈透鏡 ===
+- Hero card：accent/serenity 漸層底 + 策略描述 + 摺疊的免責聲明
+- 配置計算器（置頂）：預算 input + 即時結果（配置條 + 金額 + 股數）
+- 5 檔推薦股 table with expandable rows（其中一列展開顯示論點 / 4-metric grid / 4-item checklist）
+- 底部 Serenity Checklist：6 格 icon row（水平 flex，每格含 icon + 標題 + 一行說明）
+
+=== Frame 6：Mobile Dashboard（375×812）===
+- Bottom tab bar 56px（5 個 icon）
+- Top header
+- KpiCard 2×2 grid
+- NAV 折線圖（縮放）
+- Holdings 改為 card list（每檔一張小卡）
+
+=== 元件使用規範 ===
+- 全部使用「Stock-Serenity DS」提供的 component instances，不要另建
+- 所有 fill / stroke / spacing 都對應 DS token
+- Auto layout 一路開到底
+- 每個 Frame 加標題註解
+
+執行完後把六個 Frame 水平排列，方便截圖比對。</pre>
+  <div class="copy-hint">💡 上傳 index.html 是關鍵 — 讓 Claude Design 知道現有 DOM 契約，產出的設計會更好對回 code</div>
+</div>
+
+<h2 id="prompt-iterate">8. Prompt C｜迭代與微調</h2>
+
+<div class="card">
+  <p style="color:var(--muted);font-size:13px">看完 mockup 通常會想微調。以下是常見情境的 prompt 樣板：</p>
+
+  <div class="prompt-label">▸ 情境 1：某頁密度不夠 / 太擠</div>
+<pre>Dashboard 的 KpiCard 太擠了，數字被 label 干擾。請重做這區塊：
+- KpiCard 高度加到 128px
+- Label 放到卡片左上，用 label/xs 灰色
+- 數字放正中央，主 KPI 用 display/xl，其他用 mono/lg
+- Sparkline 移到卡片下緣，寬度撐滿，高 24px
+- Change chip 放在數字右側同一行，不要換行</pre>
+
+  <div class="prompt-label">▸ 情境 2：替換元件樣式</div>
+<pre>把 Serenity 頁的信念等級 badge 改成 pill 樣式：
+- 圓角 999px
+- 內距 4×10
+- S 級加 subtle glow（box-shadow: 0 0 12px rgba(251,191,36,0.3)）
+- 其他等級不加 glow
+- Icon 改為 filled variant</pre>
+
+  <div class="prompt-label">▸ 情境 3：新增互動狀態</div>
+<pre>幫 HoldingsRow 補齊互動狀態並展示：
+- default
+- hover（背景 bg/elevated）
+- selected（左側 3px accent 邊條）
+- expanded（展開後底下多一區 inline sparkline + 快速動作按鈕）
+在 canvas 上四個狀態並排展示。</pre>
+
+  <div class="prompt-label">▸ 情境 4：換整體氛圍</div>
+<pre>目前的色調有點太冷。請保留 token 結構，把 accent/primary 從 #5b9dff 換成 #7c9eff（略帶紫的藍），把 bg/base 從 #0a0e17 加一點暖度改成 #0d1220。所有引用這兩個 token 的畫面自動更新。</pre>
+</div>
+
+<h2 id="prompt-export">9. Prompt D｜匯出後給 Claude Code 落地（Phase 3 起點）</h2>
+
+<div class="goal-block">
+  <p>把 Claude Design 的重設計精準翻譯回 index.html + styles.css，保留 app.js 既有函式與 DOM 契約 0 變動。這是 Phase 3 的前半段；完成後才接續 OPTIMIZATION_GUIDE.html 的 P2 資料層優化。
+  <span class="criteria">✓ 完成標準：五頁功能與 Phase 1 完成後完全一致 · 新設計 pixel 對齊 Claude Design 匯出結果 · git diff 只涉及 index.html + styles.css · app.js 若有新增只在檔尾當 helper · 375 / 768 / 1440 三個斷點都能看</span>
+</p></div>
+
+<div class="card">
+  <p style="color:var(--muted);font-size:13px">Claude Design 應該可以匯出 HTML/CSS 或截圖（Beta 版能力可能還在演進，最壞情況就截圖 + 描述）。把匯出結果丟給 Claude Code：</p>
+  <div class="prompt-label">▸ 貼給 Claude Code（在 Stock-Serenity 資料夾）</div>
+<pre>我在 Claude Design 完成了 Stock-Serenity 的新設計，請把它翻譯回程式碼。
+
+我會附上：
+- 從 Claude Design 匯出的 HTML/CSS（或截圖 + 我口述描述）：{此處貼入或附檔}
+- 現有的 index.html、app.js、styles.css（已在資料夾內）
+
+=== 落地規則 ===
+1. 只重寫 index.html 與 styles.css。app.js 的函式與 DOM id / class 契約必須保留：
+   - 保留 id：#total-value、#total-cost、#total-pnl、#total-pnl-pct、#holdings-tbody、#manage-tbody、#allocation-chart、#pnl-chart、#price-chart、#chart-stock-select、#news-container、#serenity-alloc-tbody、#serenity-budget
+   - 保留 data-page、data-period 屬性
+   - 保留 addStock / deleteStock / refreshAll / calcSerenityAlloc / fetchNews 等 onclick binding
+2. styles.css 使用 CSS variables 對應 DS tokens：
+   --bg-base, --bg-surface, --bg-elevated, --border-subtle, --text-primary, --text-muted, --state-profit, --state-loss, --accent-primary, --accent-serenity, --radius-sm/md/lg, --space-*
+3. Layout 全部用 CSS Grid / Flexbox，禁止 magic number
+4. RWD：@media (max-width: 1023px) sidebar 收合、(max-width: 767px) 改 bottom tab bar
+5. 保留 Chart.js + Font Awesome CDN
+6. 新增元件（KpiCard sparkline / SegmentedControl / Drawer 等）如需 JS 支援，加到 app.js 末尾當 helper，勿改既有函式
+7. 動畫用 CSS transition，短促（150–200ms ease-out）
+
+=== 交付檢查 ===
+- 開啟 index.html 五個頁面切換正常
+- 新增假資料，dashboard summary 更新正確
+- 走勢圖 period 切換正常
+- Serenity 計算器正常
+- devtools 375px / 768px / 1440px 都能看
+- lighthouse 分數不比原本差
+
+執行前先讀完現有的 index.html / app.js / styles.css，列出 DOM 契約清單再開始寫。全部完成前不要 commit，我要在瀏覽器測試。</pre>
+</div>
+
+<h2>10. 給 Claude Design 的三個小技巧</h2>
+
+<div class="card">
+  <ul class="checklist">
+    <li><strong>先建 DS 再開 Project</strong>：DS 是可複用的資產，直接在 Prototype 裡建的樣式無法跨檔案共用</li>
+    <li><strong>上傳現有 HTML 檔比截圖有用</strong>：從截圖它只能猜結構，從 HTML 它可以精確保留 id / class 契約，之後 Claude Code 對回程式碼會順很多</li>
+    <li><strong>先 Wireframe 敲 layout，再 Prototype 上樣式</strong>：如果對五頁 layout 還不確定，先用 Wireframe 模板產灰階線框圖，快速迭代 3–5 次敲定 layout 骨架後再走 Prototype 上高保真樣式，會省很多重繪時間</li>
+  </ul>
+</div>
+
+<footer>
+  Stock-Serenity Redesign Brief · Claude Design Edition · Generated for weichenghuang@igs.com.tw · 搭配 OPTIMIZATION_GUIDE.html 依序執行
+</footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stock-Serenity 優化指南｜Claude Code Prompts</title>
+<style>
+:root{
+  --bg:#0b0f17; --panel:#131a26; --panel-2:#1a2333; --border:#243149;
+  --text:#e6edf7; --muted:#8a95a8; --accent:#5b9dff; --accent-2:#22d3ee;
+  --p1:#ef4444; --p2:#f59e0b; --p3:#10b981;
+  --code-bg:#0a1120; --code-border:#1e2a44;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:'Inter','PingFang TC','Microsoft JhengHei',system-ui,sans-serif;line-height:1.65;font-size:15px}
+.container{max-width:1080px;margin:0 auto;padding:48px 32px}
+header{border-bottom:1px solid var(--border);padding-bottom:28px;margin-bottom:40px}
+h1{font-size:32px;margin:0 0 8px;background:linear-gradient(135deg,#5b9dff,#22d3ee);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:700}
+.subtitle{color:var(--muted);font-size:15px}
+.meta{display:flex;gap:16px;margin-top:16px;flex-wrap:wrap}
+.meta span{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--muted)}
+h2{font-size:22px;margin:48px 0 16px;border-left:3px solid var(--accent);padding-left:12px}
+h3{font-size:17px;margin:24px 0 8px;color:#c9d4e6}
+.priority{display:inline-block;padding:2px 10px;border-radius:4px;font-size:12px;font-weight:600;margin-right:8px;vertical-align:middle}
+.p1{background:rgba(239,68,68,.15);color:#ff8080;border:1px solid rgba(239,68,68,.35)}
+.p2{background:rgba(245,158,11,.15);color:#ffc766;border:1px solid rgba(245,158,11,.35)}
+.p3{background:rgba(16,185,129,.15);color:#5ee6ba;border:1px solid rgba(16,185,129,.35)}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:20px 22px;margin-bottom:20px}
+.card.p1{border-left:3px solid var(--p1)}
+.card.p2{border-left:3px solid var(--p2)}
+.card.p3{border-left:3px solid var(--p3)}
+.problem{color:#ffb0b0;font-size:13px;margin-bottom:6px}
+.solution{color:#a8d8ff;font-size:13px;margin-bottom:12px}
+.files{color:var(--muted);font-size:12px;margin-bottom:12px}
+.files code{background:var(--code-bg);padding:2px 6px;border-radius:4px;border:1px solid var(--code-border);color:#c9d4e6}
+.prompt-label{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--accent-2);margin:14px 0 6px;font-weight:600}
+pre{background:var(--code-bg);border:1px solid var(--code-border);border-radius:8px;padding:16px;overflow-x:auto;margin:0;font-family:'JetBrains Mono','Menlo','Consolas',monospace;font-size:13px;line-height:1.55;color:#d0dcf2;white-space:pre-wrap;word-wrap:break-word}
+pre code{color:inherit;background:none;padding:0;border:none}
+.copy-hint{font-size:11px;color:var(--muted);text-align:right;margin-top:4px}
+.toc{background:var(--panel-2);border:1px solid var(--border);border-radius:10px;padding:20px 24px;margin-bottom:40px}
+.toc h3{margin-top:0}
+.toc ol{margin:8px 0;padding-left:22px}
+.toc li{margin:4px 0}
+.toc a{color:var(--accent);text-decoration:none}
+.toc a:hover{text-decoration:underline}
+.workflow{background:linear-gradient(135deg,rgba(91,157,255,.08),rgba(34,211,238,.06));border:1px solid rgba(91,157,255,.25);border-radius:10px;padding:20px 24px;margin:24px 0}
+.workflow h3{margin-top:0;color:var(--accent)}
+.workflow ol{margin:8px 0;padding-left:22px}
+.workflow li{margin:6px 0}
+kbd{background:var(--code-bg);border:1px solid var(--code-border);border-radius:4px;padding:1px 6px;font-family:monospace;font-size:12px;color:#c9d4e6}
+.tag{display:inline-block;background:rgba(91,157,255,.12);color:var(--accent);padding:2px 8px;border-radius:4px;font-size:11px;margin-right:6px}
+.goal-block{background:linear-gradient(135deg,rgba(34,211,238,.08),rgba(91,157,255,.06));border:1px solid rgba(34,211,238,.3);border-radius:10px;padding:18px 22px;margin:20px 0 28px;position:relative}
+.goal-block:before{content:"/goal";position:absolute;top:-11px;left:16px;background:var(--bg);color:var(--accent-2);font-family:monospace;font-size:12px;font-weight:700;padding:2px 10px;border:1px solid rgba(34,211,238,.4);border-radius:4px;letter-spacing:.05em}
+.goal-block p{margin:0;font-size:14px;line-height:1.65;color:#d0dcf2}
+.goal-block .criteria{display:block;margin-top:10px;padding-top:10px;border-top:1px dashed rgba(34,211,238,.2);font-size:12px;color:var(--muted)}
+.phase-map{background:var(--panel-2);border:1px solid var(--border);border-radius:10px;padding:20px 24px;margin-bottom:32px}
+.phase-map table{width:100%;border-collapse:collapse;margin-top:10px}
+.phase-map th,.phase-map td{text-align:left;padding:8px 10px;font-size:13px;border-bottom:1px solid var(--border)}
+.phase-map th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+.phase-map td:first-child{font-weight:600;color:var(--accent-2);white-space:nowrap}
+.phase-map .this-doc{background:rgba(34,211,238,.06)}
+footer{margin-top:64px;padding-top:24px;border-top:1px solid var(--border);color:var(--muted);font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>Stock-Serenity 優化指南</h1>
+  <div class="subtitle">依優先級整理的改善清單，附 Claude Code 可直接複製的提示詞</div>
+  <div class="meta">
+    <span>目標：index.html / app.js / styles.css</span>
+    <span>更新：2026-07-06</span>
+    <span>執行環境：Claude Code</span>
+  </div>
+</header>
+
+<div class="toc">
+  <h3>目錄</h3>
+  <ol>
+    <li><a href="#phase-map">四階段整體 Phase 對照</a></li>
+    <li><a href="#workflow">建議執行流程</a></li>
+    <li><a href="#p1">🔴 P1 高優先級（Phase 1）</a></li>
+    <li><a href="#p2">🟡 P2 中優先級（Phase 3 後半）</a></li>
+    <li><a href="#p3">🟢 P3 低優先級（Phase 4）</a></li>
+    <li><a href="#master">綜合提示詞（一次到位版）</a></li>
+  </ol>
+</div>
+
+<div class="phase-map" id="phase-map">
+  <h3 style="margin-top:0">🗺️ 四階段整體 Phase 對照</h3>
+  <p style="color:var(--muted);font-size:13px;margin:6px 0 0">此文件涵蓋 Phase 1 / 3(P2 部分) / 4。Phase 2 的設計工作請看 <code>REDESIGN_BRIEF.html</code>。</p>
+  <table>
+    <tr><th>Phase</th><th>範疇</th><th>對應本文件</th><th>時長</th></tr>
+    <tr class="this-doc"><td>Phase 1</td><td>資安 / 穩定性（純邏輯層）</td><td>P1-1 ~ P1-3</td><td>1–2h</td></tr>
+    <tr><td>Phase 2</td><td>Claude Design 重設計 UI/UX</td><td>見 REDESIGN_BRIEF.html</td><td>半天–1 天</td></tr>
+    <tr class="this-doc"><td>Phase 3</td><td>設計落地（Prompt D）+ 資料層</td><td>Prompt D 見 Brief → P2-1 ~ P2-4</td><td>1–2 天</td></tr>
+    <tr class="this-doc"><td>Phase 4</td><td>體驗打磨</td><td>P3-1 ~ P3-6</td><td>1 天</td></tr>
+  </table>
+</div>
+
+<div class="workflow" id="workflow">
+  <h3>📋 建議執行流程</h3>
+  <ol>
+    <li>在專案根目錄開啟 Claude Code：<kbd>cd E:\Wayne\Claude\Stock-Serenity</kbd> → <kbd>claude</kbd></li>
+    <li>先請 Claude Code 讀完 <code>index.html</code>、<code>app.js</code>、<code>styles.css</code>，建立上下文</li>
+    <li>依 P1 → P2 → P3 順序，每項任務貼一次提示詞。每完成一項先在瀏覽器測試再進下一項</li>
+    <li>P1 完成後建議先 <code>git commit</code>，避免後續改動累積難以回溯</li>
+    <li>全部完成後跑一次完整 QA：新增/刪除持股、切換頁面、更新資料、離線重新載入</li>
+  </ol>
+</div>
+
+<h2 id="p1">🔴 P1 高優先級 · Phase 1</h2>
+
+<div class="goal-block">
+  <p>修補 Stock-Serenity 三項致命問題：CORS 代理單點故障、XSS 注入風險、跨幣種加總錯誤。目標是讓工具在資安與資料正確性上達到可信任等級，且不動任何 UI 結構。
+  <span class="criteria">✓ 完成標準：npm 無新依賴 · git diff 只涉及 app.js · 五頁 UI 外觀不變 · 瀏覽器 devtools 無 error · 新增一筆 US 股 + 一筆 TW 股後總市值以 TWD 正確加總</span></p>
+</div>
+
+<div class="card p1">
+  <h3><span class="priority p1">P1-1</span>移除 CORS 代理單點故障</h3>
+  <div class="problem">問題：所有 Yahoo Finance 呼叫都經過 <code>api.allorigins.win</code>，第三方公用代理隨時可能被限速或停用，導致整個 app 抓不到資料。</div>
+  <div class="solution">方案：加入多來源 fallback（Yahoo → FinMind → 台灣證交所公開資料）並允許使用者自訂 proxy endpoint。</div>
+  <div class="files">影響檔案：<code>app.js</code>（fetchPrice / fetchPriceFallback / fetchHistory）</div>
+
+  <div class="prompt-label">▸ Claude Code Prompt</div>
+<pre><code>請重構 app.js 裡的 fetchPrice、fetchPriceFallback、fetchHistory 三個函式，達成以下目標：
+
+1. 抽出一個 PROVIDERS 陣列，依序嘗試：
+   (a) 使用者自訂 proxy（從 localStorage 讀取 key: "customProxy"）
+   (b) api.allorigins.win（現有）
+   (c) corsproxy.io
+   (d) 台股：若 market === "TW"，嘗試證交所 https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_AVG_ALL 或 FinMind 免費 API
+2. 每個 provider 加 5 秒 timeout（用 AbortController）
+3. 任一 provider 回傳有效資料就 return，全部失敗才回傳 zero-object
+4. 在 console 印出實際成功的 provider 名稱，方便除錯
+5. 新增一個 UI 元件（在 sidebar-footer 下方）讓使用者填入自訂 proxy URL，存 localStorage
+6. 保留原本函式簽章，避免其他呼叫端要改
+
+改完後在檔案頂端加註解說明 provider 順序與 fallback 邏輯。</code></pre>
+</div>
+
+<div class="card p1">
+  <h3><span class="priority p1">P1-2</span>修補 XSS 注入風險</h3>
+  <div class="problem">問題：<code>news-title</code>、<code>stock.name</code>、<code>source</code> 等來自外部/使用者輸入的字串，透過 <code>innerHTML</code> 直接插入 DOM。惡意新聞標題可注入 <code>&lt;script&gt;</code> 或 <code>onerror=</code> 攻擊。</div>
+  <div class="solution">方案：建立 <code>escapeHtml()</code> 工具、所有動態字串一律 escape；連結 <code>href</code> 白名單 https/http。</div>
+  <div class="files">影響檔案：<code>app.js</code>（fetchNews / renderHoldingsTable / renderManageTable / addStock）</div>
+
+  <div class="prompt-label">▸ Claude Code Prompt</div>
+<pre><code>請為 app.js 加上完整 XSS 防護：
+
+1. 在檔案頂端加一個 utility：
+   function escapeHtml(str) {
+     if (str == null) return "";
+     return String(str).replace(/[&<>"'`=\/]/g, s => ({
+       "&":"&amp;","<":"&lt;",">":"&gt;",
+       "\"":"&quot;","'":"&#39;","`":"&#96;","=":"&#61;","/":"&#47;"
+     }[s]));
+   }
+2. 找出所有用 innerHTML 塞外部資料的地方（fetchNews、renderHoldingsTable、renderManageTable、renderPriceChart 的 label、showToast），全部改用 escapeHtml() 包住 stock.name、stock.symbol、title、source。
+3. fetchNews 裡的 link 屬性：只接受 http:// 或 https:// 開頭，其他一律替換成 "#"。
+4. addStock 收到的 symbol / name 也要在存進 portfolio 前做 trim + 長度上限（symbol ≤ 10 字元、name ≤ 40 字元）。
+5. 完成後在 README 或程式頂端註明「所有外部資料需經 escapeHtml() 處理」。</code></pre>
+</div>
+
+<div class="card p1">
+  <h3><span class="priority p1">P1-3</span>加入 USD/TWD 匯率換算</h3>
+  <div class="problem">問題：<code>refreshAll()</code> 直接把台股（TWD）與美股（USD）市值相加，總額毫無意義。</div>
+  <div class="solution">方案：抓即時匯率，統一換算成 TWD 顯示；並在 UI 標示「以 TWD 計」與當日匯率。</div>
+  <div class="files">影響檔案：<code>app.js</code>（新增 fetchFxRate / refreshAll / renderHoldingsTable），<code>index.html</code>（summary-cards 加註）</div>
+
+  <div class="prompt-label">▸ Claude Code Prompt</div>
+<pre><code>請為 app.js 加入貨幣換算：
+
+1. 新增 fetchFxRate() 函式，抓 USD→TWD 匯率（可用 Yahoo Finance 的 "TWD=X" 符號透過既有 CORS proxy）
+2. refreshAll() 開頭先 await fetchFxRate()，把匯率存到全域 state.usdTwd
+3. 計算 totalValue / totalCost 時，若 stock.market === "US"，把該筆金額乘以 state.usdTwd 換算成 TWD 再加總
+4. renderHoldingsTable() 每列的「市值」欄位一律以 TWD 顯示；額外增加一欄「原幣值」顯示 stock.market 的原始金額（US 顯示 USD、TW 顯示 TWD）
+5. 在 sidebar-footer 或 dashboard header 顯示：「當前 USD/TWD: xx.xx（{時間} 更新）」
+6. 若 fetchFxRate 失敗，使用 fallback 32.5 並在 UI 用黃色警示標示「匯率為估計值」
+7. 記得更新 index.html 的表格 header（新增「原幣值」欄）以及 colspan 數字</code></pre>
+</div>
+
+<h2 id="p2">🟡 P2 中優先級 · Phase 3 後半</h2>
+
+<div class="goal-block">
+  <p>把 Claude Design 的重設計翻譯回 index.html + styles.css（Prompt D，見 REDESIGN_BRIEF.html），同時強化資料層四項：Serenity 單一資料源、價格快取 TTL、匯出匯入、資產淨值歷史。
+  <span class="criteria">✓ 完成標準：app.js 既有函式與 DOM 契約 0 變動 · 五頁功能與 Phase 1 完成後一致 · 新設計 pixel 對齊 Claude Design 匯出結果 · P2 四項通過瀏覽器 QA · 匯出 JSON 重新匯入後 portfolio 資料完全一致</span></p>
+</div>
+
+<p style="color:var(--muted);font-size:13px;margin:0 0 16px">⚠️ 進入 P2 之前，請先執行 REDESIGN_BRIEF.html 的 Prompt D 把設計對回 code、通過 QA 並 <code>git commit -m "design landed"</code>。</p>
+
+<div class="card p2">
+  <h3><span class="priority p2">P2-1</span>Serenity 資料單一來源</h3>
+  <div class="problem">問題：Serenity 五檔股票的名稱、價格、配置 % 在 <code>index.html</code>（寫死 HTML）和 <code>app.js</code>（<code>serenityStocks</code> 陣列）各有一份，更新時容易漏改。</div>
+  <div class="solution">方案：把 HTML 內的推薦卡片與配置表改為 JS 動態渲染，所有資料只存在 <code>serenityStocks</code>。</div>
+  <div class="files">影響檔案：<code>app.js</code>（擴充 serenityStocks 資料結構、新增 renderSerenityCards / renderSerenityAllocTable），<code>index.html</code>（清空 serenity-grid 與 alloc-table）</div>
+
+  <div class="prompt-label">▸ Claude Code Prompt</div>
+<pre><code>請把 Serenity 頁面改為單一資料來源：
+
+1. 擴充 app.js 中的 serenityStocks 陣列，每筆包含：
+   { name, ticker, weight, price, tier, tierClass, subtitle, thesis, metrics: [{label,value}...], checklist: [{type:'pass'|'warn', text}...], allocBadge, sourceDate }
+2. 從 index.html 提取現有五張 serenity-stock-card 的內容，全部填入 serenityStocks 對應欄位
+3. 在 app.js 新增 renderSerenityCards() 函式，依 serenityStocks 動態產生所有 <div class="card serenity-stock-card ...">
+4. renderSerenityAllocTable() 也從 serenityStocks 產生表格
+5. 修改 index.html：把 <div class="serenity-grid"> 內容清空、把 <tbody id="serenity-alloc-tbody"> 清空
+6. init() 呼叫時同時呼叫 renderSerenityCards() 與 calcSerenityAlloc()
+7. 所有輸出到 innerHTML 的動態字串請用剛才加的 escapeHtml() 包住
+
+保留原本卡片的視覺樣式（tier-s/tier-a/tier-b class 對應信念等級）</code></pre>
+</div>
+
+<div class="card p2">
+  <h3><span class="priority p2">P2-2</span>價格快取 + TTL</h3>
+  <div class="problem">問題：<code>priceCache</code> 物件宣告了卻從未真正被讀取；且沒有過期機制。頻繁 refresh 會浪費 API 配額。</div>
+  <div class="solution">方案：實作 60 秒 TTL 記憶體快取；同時把當日收盤價存進 localStorage 作為離線 fallback。</div>
+  <div class="files">影響檔案：<code>app.js</code>（fetchPrice / refreshAll）</div>
+
+  <div class="prompt-label">▸ Claude Code Prompt</div>
+<pre><code>請重寫 app.js 的 priceCache 機制：
+
+1. 把 priceCache 改為 { "TW:2330": { data: {...}, ts: 1720000000000 } } 結構
+2. fetchPrice() 進入時先檢查 cache，若 (Date.now() - ts) < 60_000 直接回傳 data，不打 API
+3. 抓成功後同時寫入 localStorage key: "priceCache"，並在檔案啟動時載入舊 cache 作為 offline fallback
+4. 所有 API 都失敗時，若 localStorage 有 24 小時內的 cache，回傳並在 UI 標示「離線資料 · {幾小時前}」
+5. 新增手動清 cache 按鈕（放在 dashboard 更新按鈕旁邊，icon: trash-alt）
+6. refreshAll 收到全部 zero-object 時要 toast 「無法連線，顯示為快取資料」而不是 "數據已更新"</code></pre>
+</div>
+
+<div class="card p2">
+  <h3><span class="priority p2">P2-3</span>匯出 / 匯入 JSON 備份</h3>
+  <div class="problem">問題：portfolio 只存在 localStorage，清瀏覽器資料就整份不見。</div>
+  <div class="solution">方案：在持股管理頁加匯出（下載 .json）、匯入（讀取檔案）按鈕。</div>
+  <div class="files">影響檔案：<code>index.html</code>（page-portfolio 加按鈕列），<code>app.js</code>（新增 exportPortfolio / importPortfolio）</div>
+
+  <div class="prompt-label">▸ Claude Code Prompt</div>
+<pre><code>請在持股管理頁新增備份功能：
+
+1. index.html 的 <section id="page-portfolio"> 頁首加一個 .portfolio-actions 區塊，內含兩顆按鈕：
+   - 匯出 JSON（icon: download）
+   - 匯入 JSON（icon: upload，觸發隱藏的 <input type="file" accept=".json">）
+2. app.js 新增：
+   function exportPortfolio() { 產生 stock-portfolio-{yyyymmdd}.json 下載 }
+   function importPortfolio(file) { 讀 JSON、驗證結構、confirm 後覆蓋 portfolio、savePortfolio()、refreshAll() }
+3. 匯入時驗證欄位：必須是陣列，每個元素含 market/symbol/shares/cost；缺欄位或型別錯誤就 toast 錯誤並中止
+4. styles.css 補 .portfolio-actions 的樣式（右對齊、按鈕間距 8px、次要按鈕樣式 btn-secondary）</code></pre>
+</div>
+
+<div class="card p2">
+  <h3><span class="priority p2">P2-4</span>資產淨值歷史追蹤</h3>
+  <div class="problem">問題：只能看到當下總市值，無法回顧一週 / 一個月的組合走勢。</div>
+  <div class="solution">方案：每次 refreshAll 成功後寫入當日 snapshot，dashboard 加一張「資產淨值走勢」折線圖。</div>
+  <div class="files">影響檔案：<code>app.js</code>（recordSnapshot / renderNavChart），<code>index.html</code>（dashboard 新增 chart card）</div>
+
+  <div class="prompt-label">▸ Claude Code Prompt</div>
+<pre><code>請為 dashboard 新增資產淨值歷史追蹤：
+
+1. app.js 新增 recordSnapshot(totalValueTwd, totalCostTwd)：
+   - 從 localStorage 讀 key "navHistory"（陣列）
+   - 若當日已有 snapshot 就更新，否則 push 一筆 { date: "YYYY-MM-DD", value, cost }
+   - 只保留最近 365 筆
+   - 存回 localStorage
+2. refreshAll() 計算完 totalValue / totalCost 後呼叫 recordSnapshot()
+3. index.html 的 dashboard 加一張 <div class="card chart-card"> 名為「資產淨值走勢（近 90 日）」，內含 <canvas id="nav-chart">
+4. app.js 新增 renderNavChart()：Chart.js line 圖，兩條線（總市值/總成本），x 軸日期、y 軸金額
+5. 在 refreshAll() 末尾呼叫 renderNavChart()
+6. 加清除歷史按鈕（在 chart card 右上角）</code></pre>
+</div>
+
+<h2 id="p3">🟢 P3 低優先級 · Phase 4</h2>
+
+<div class="goal-block">
+  <p>完成 Stock-Serenity 的體驗打磨層：表格互動、觸價提示、技術指標完整化、loading skeleton、RWD 實測、a11y 補齊。
+  <span class="criteria">✓ 完成標準：Lighthouse Performance ≥ 90 · Accessibility ≥ 95 · 手機（375px）能單手操作 · 鍵盤 Tab 可完整走完主要流程 · 任一持股達目標價/停損時瀏覽器會通知 · MACD 三序列 + RSI 獨立圖表繪製正常</span></p>
+</div>
+
+<div class="card p3">
+  <h3><span class="priority p3">P3-1</span>表格排序 & 篩選</h3>
+  <div class="problem">問題：holdings-table 欄位多但無法排序，難快速找出漲最兇 / 跌最兇。</div>
+  <div class="solution">方案：點 header 觸發排序、加搜尋框過濾。</div>
+
+  <div class="prompt-label">▸ Claude Code Prompt</div>
+<pre><code>請為 holdings-table 與 manage-table 加上互動：
+
+1. 點 <th> 觸發排序（升冪→降冪→原順序循環）
+2. 排序方向用 ▲▼ 小箭頭指示
+3. holdings-table 上方加一個搜尋框，即時過濾 name / symbol
+4. 排序狀態存 sessionStorage，重新載入不會重置（但關 tab 會清）
+5. 純 vanilla JS，不引入額外套件</code></pre>
+</div>
+
+<div class="card p3">
+  <h3><span class="priority p3">P3-2</span>目標價 / 停損提示</h3>
+  <div class="problem">問題：無法設定觸價提醒。</div>
+
+  <div class="prompt-label">▸ Claude Code Prompt</div>
+<pre><code>請擴充 portfolio 資料結構加入 targetPrice 與 stopLoss：
+
+1. addStock 表單新增兩個欄位（目標價、停損價），可留空
+2. holdings-table 加一欄「觸價狀態」：
+   - 現價 ≥ targetPrice → 🎯 綠色「達目標」
+   - 現價 ≤ stopLoss → ⚠️ 紅色「觸停損」
+   - 否則 —
+3. refreshAll 完成後，若有任何觸價，跳出瀏覽器 Notification（先要求權限）
+4. 持股管理頁提供編輯目標價 / 停損價的介面（點該列進入編輯模式）</code></pre>
+</div>
+
+<div class="card p3">
+  <h3><span class="priority p3">P3-3</span>技術指標完整化</h3>
+  <div class="problem">問題：MACD 只算差值不畫 signal line 與 histogram；RSI 只顯示最後一根。</div>
+
+  <div class="prompt-label">▸ Claude Code Prompt</div>
+<pre><code>請補完技術指標：
+
+1. calculateMACD 改回傳 { macd: [], signal: [], histogram: [] } 三條序列
+2. price-chart 下方新增第二張 canvas #macd-chart 畫 MACD 三條線 + histogram bar
+3. calculateRSI 也改回傳整條序列，新增第三張 canvas #rsi-chart，畫 30 / 70 兩條水平參考線
+4. tech-indicators 區塊顯示最新值即可（保留現有邏輯，只是資料來源改成序列的最後一筆）
+5. 三張 chart 的 x 軸時間對齊</code></pre>
+</div>
+
+<div class="card p3">
+  <h3><span class="priority p3">P3-4</span>Loading Skeleton</h3>
+
+  <div class="prompt-label">▸ Claude Code Prompt</div>
+<pre><code>請加入 skeleton loading：
+
+1. styles.css 新增 .skeleton class，用漸層 animation
+2. refreshAll 開始時，summary-cards 的 .card-value 加上 .skeleton class（顯示灰色動畫方塊）
+3. holdings-tbody 顯示 3 列骨架列（每格 skeleton）
+4. 完成後移除 class
+5. 對應 chart 容器也顯示 skeleton 直到 chart 繪製完成</code></pre>
+</div>
+
+<div class="card p3">
+  <h3><span class="priority p3">P3-5</span>RWD / 手機優化</h3>
+
+  <div class="prompt-label">▸ Claude Code Prompt</div>
+<pre><code>請優化行動裝置體驗：
+
+1. 螢幕寬度 &lt; 768px：sidebar 改為底部 tab bar（icon-only），main-content 上方留 header
+2. holdings-table 在窄螢幕改為卡片式列表（每檔股票一張小卡）
+3. summary-cards 在 &lt; 768px 改為 2x2 grid，&lt; 480px 改為單欄
+4. 圖表區域高度隨螢幕縮放
+5. 所有 button 觸控目標最小 44x44px
+6. 保留桌面版樣式，只加 @media 覆蓋</code></pre>
+</div>
+
+<div class="card p3">
+  <h3><span class="priority p3">P3-6</span>a11y 無障礙</h3>
+
+  <div class="prompt-label">▸ Claude Code Prompt</div>
+<pre><code>請補足無障礙屬性：
+
+1. 所有 <button> 加上明確的 aria-label
+2. sidebar-nav 加 role="navigation" aria-label="主要導覽"
+3. 每個 <section class="page"> 加 aria-labelledby 對應該頁 h1 的 id
+4. 表格 <th> 加 scope="col"
+5. 表單 <label> 全部用 for 明確對應到 input id
+6. 圖表 canvas 加 role="img" 與 aria-label 描述當前資料
+7. 焦點 outline 保留（不要 outline: none），並加自訂 :focus-visible 樣式</code></pre>
+</div>
+
+<h2 id="master">🎯 綜合提示詞（Phase 1 / 3 / 4 一次到位）</h2>
+
+<div class="card">
+  <p style="color:var(--muted);font-size:13px">若你想跳過設計、只做 code 優化（Phase 1 → Phase 3 後半 → Phase 4），可貼下面這段。<strong>強烈建議每個 Phase 之間各 commit 一次</strong>，避免 diff 過大難 review。</p>
+
+  <div class="prompt-label">▸ 完整 Prompt</div>
+<pre><code>你將對 Stock-Serenity 專案（index.html / app.js / styles.css）進行系統性優化。
+
+請先讀完三個檔案建立完整上下文，接著依 P1 → P2 → P3 順序執行，每完成一個 P 層級就停下來讓我測試再繼續。
+
+=== P1 高優先級（穩定性 / 安全性）===
+1. 移除 CORS 代理單點故障：實作多來源 provider 陣列（自訂 proxy → allorigins → corsproxy.io → 台股走 TWSE OpenAPI），每個 5 秒 timeout。sidebar 加自訂 proxy 輸入欄。
+2. 修補 XSS：新增 escapeHtml() utility；所有 innerHTML 動態內容都要 escape；news link 白名單 http(s)。addStock 對 symbol / name 做長度上限。
+3. 加入 USD/TWD 匯率換算：新增 fetchFxRate()，refreshAll 開頭抓匯率；美股金額換算為 TWD 計入總市值；UI 顯示當前匯率；holdings-table 加「原幣值」欄。
+
+=== P2 中優先級（資料品質）===
+4. Serenity 資料單一來源：把 index.html 五張推薦卡片改為 JS 動態渲染，資料只存 serenityStocks。
+5. 價格快取 + TTL：priceCache 改為 {data, ts} 結構，60 秒內回快取；同步寫 localStorage 作 24h 離線 fallback。
+6. 匯出 / 匯入 JSON：portfolio 頁加兩顆按鈕，匯入時驗證欄位結構。
+7. 資產淨值歷史：每日 snapshot 存 localStorage（保留 365 筆），dashboard 新增走勢折線圖。
+
+=== P3 低優先級（體驗）===
+8. holdings-table / manage-table 加點 header 排序 + 搜尋框。
+9. portfolio 加 targetPrice / stopLoss，觸價用 Notification 提醒。
+10. 技術指標完整化：MACD 三序列 + histogram；RSI 拉出獨立 chart 並畫 30/70 參考線。
+11. Loading skeleton。
+12. RWD：&lt; 768px sidebar 改底部 tab bar，table 改卡片式。
+13. a11y：aria-label、scope、role、:focus-visible。
+
+規範：
+- 保留現有函式簽章與 CSS class 名稱，避免破壞外部相依
+- 純 vanilla JS，不引入新套件（既有 Chart.js 可以繼續用）
+- 每個 P 層級完成後印出「=== P{n} 完成，請測試以下項目：... ===」等我回覆再進下一層
+- 每次 innerHTML 都必須經過 escapeHtml
+- 所有金額顯示遵循現有 formatCurrency 邏輯
+
+從 P1-1 開始。</code></pre>
+  <div class="copy-hint">💡 可直接複製整段貼到 Claude Code</div>
+</div>
+
+<footer>
+  Stock-Serenity Optimization Guide · Generated for weichenghuang@igs.com.tw · 建議搭配 UI/UX Redesign Brief 一起使用
+</footer>
+
+</div>
+</body>
+</html>
