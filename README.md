@@ -24,6 +24,7 @@ Stock-Serenity/
 ├── app-enhancements.js       ← UI 補強（Drawer / Tab bar / 排序 / 匯出）
 ├── portfolio.json            ← 個人真實持股（我的持倉頁讀取）— gitignored，本地才有
 ├── portfolio.example.json    ← 檔案結構範本，clone 後複製一份成 portfolio.json
+├── serenity.json             ← Serenity 名單 + 配置比重（可獨立編輯後 git push 上線）
 ├── OPTIMIZATION_GUIDE.html   ← 四階段優化總指南
 ├── REDESIGN_BRIEF.html       ← Phase 2 Claude Design brief
 └── README.md                 ← 本檔
@@ -156,6 +157,17 @@ Stock-Serenity/
 | P3-4 | Loading Skeleton | KPI shimmer + 3 列骨架 row + chart overlay；`showLoadingSkeletons`/`hideLoadingSkeletons` |
 | P3-5 | RWD 補完 | <480px KPI 單欄 + holdings 卡片式；44px 觸控目標；匯出/匯入按鈕綁定 |
 | P3-6 | a11y 無障礙 | skip-link、`role="navigation"`、`aria-labelledby`、`<th scope>`、canvas `role="img"`、`:focus-visible` |
+
+## Serenity 名單維護
+
+**要換股或改比重時：**
+
+1. 編輯 `serenity.json`（可以直接在 GitHub 網頁上按鉛筆 icon 編）
+2. 更新 `lastReviewed`, `stocks[]` (name/ticker/market/weight/tier)
+3. Commit → GitHub Pages 1~2 分鐘後自動生效
+4. 不用改任何程式碼
+
+**股價：** app.js 會用 `fetchPrice()` 抓 Yahoo Finance 即時報價（TW 加 `.TW` 後綴，US 直接查），90 秒快取；失敗時對應那一列顯示「價格待更新」，不會用舊快照誤導。
 
 ## 剩餘待接（非 Phase 4 範疇，如需求可另開）
 
