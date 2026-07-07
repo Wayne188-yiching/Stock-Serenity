@@ -1,0 +1,74 @@
+name: Serenity monthly review
+
+# When to run:
+#   - Daily at 22:00 UTC (06:00 Taipei). Script exits early if nextReviewBy
+#     hasn't passed, so most days this is a ~10s no-op with no API cost.
+#   - Manually via Actions tab; use `force=true` to skip the date gate.
+on:
+  schedule:
+    - cron: '0 22 * * *'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'Force run even if nextReviewBy has not passed'
+        type: boolean
+        default: false
+      model:
+        description: 'Anthropic model id (leave blank for default)'
+        type: string
+        required: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: scripts/package.json
+
+      - name: Install SDK
+        working-directory: scripts
+        run: npm install --no-audit --no-fund
+
+      - name: Run Serenity review
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          FORCE_RUN: ${{ inputs.force }}
+          MODEL: ${{ inputs.model }}
+        run: node scripts/serenity-review.mjs
+
+      - name: Detect changes
+        id: diff
+        run: |
+          if git diff --quiet -- serenity.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No changes to serenity.json — nothing to PR."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "serenity.json changed — will open PR."
+          fi
+
+      - name: Create Pull Request
+        if: steps.diff.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: chore/serenity-review-${{ github.run_number }}
+          delete-branch: true
+          commit-message: 'chore(serenity): monthly review proposal (run #${{ github.run_number }})'
+          title: 'chore(serenity): monthly review — ${{ github.run_number }}'
+          body-path: scripts/review-report.md
+          labels: |
+            serenity-review
+            needs-human-review
+          add-paths: |
+            serenity.json

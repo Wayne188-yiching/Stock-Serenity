@@ -20,3 +20,8 @@ portfolio.json
 .playwright-mcp/
 *.jpeg
 *.png
+
+# CI intermediates
+scripts/node_modules/
+scripts/review-report.md
+scripts/.skip

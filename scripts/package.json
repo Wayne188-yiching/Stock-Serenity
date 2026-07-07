@@ -1,0 +1,13 @@
+{
+  "name": "serenity-review-scripts",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Monthly Serenity list review — calls Anthropic API to score TW stocks via chokepoint methodology.",
+  "scripts": {
+    "review": "node serenity-review.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.0"
+  }
+}

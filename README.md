@@ -25,6 +25,12 @@ Stock-Serenity/
 ├── portfolio.json            ← 個人真實持股（我的持倉頁讀取）— gitignored，本地才有
 ├── portfolio.example.json    ← 檔案結構範本，clone 後複製一份成 portfolio.json
 ├── serenity.json             ← Serenity 名單 + 配置比重（可獨立編輯後 git push 上線）
+├── scripts/                  ← CI 用：Anthropic API 分析腳本 + 12 條方法論 prompt
+│   ├── serenity-review.mjs   ← 每月 review 主程式
+│   ├── skills-prompt.md      ← System prompt（從兩份 MIT skill 蒸餾）
+│   └── package.json          ← 只依賴 @anthropic-ai/sdk
+├── .github/workflows/
+│   └── serenity-review.yml   ← 每日 06:00 Taipei check，到期自動開 PR
 ├── OPTIMIZATION_GUIDE.html   ← 四階段優化總指南
 ├── REDESIGN_BRIEF.html       ← Phase 2 Claude Design brief
 └── README.md                 ← 本檔
@@ -168,6 +174,56 @@ Stock-Serenity/
 4. 不用改任何程式碼
 
 **股價：** app.js 會用 `fetchPrice()` 抓 Yahoo Finance 即時報價（TW 加 `.TW` 後綴，US 直接查），90 秒快取；失敗時對應那一列顯示「價格待更新」，不會用舊快照誤導。
+
+## Serenity 自動 review pipeline
+
+由 GitHub Actions + Anthropic API 驅動，每月自動幫你重排 `stocks[]`，開 PR 讓你 review。
+
+### 一次性設定（5 分鐘）
+
+1. **拿 Anthropic API key**
+   - 去 https://console.anthropic.com/
+   - Settings → API Keys → Create Key
+   - 儲值 $5 起（一次 review 大約消耗 $0.5–$2，撐半年沒問題）
+
+2. **加到 GitHub Secrets**
+   - Repo → Settings → Secrets and variables → Actions → New repository secret
+   - Name: `ANTHROPIC_API_KEY`
+   - Value: 貼你剛才產的 key
+
+3. **完成。** 每天 06:00（Taipei）workflow 會自動檢查 `nextReviewBy`，未到期不會呼叫 API（0 成本）。
+
+### 到期時會發生什麼
+
+- Workflow 讀 `serenity.json` 內的 `stocks[]`（目前 5 檔）+ `candidates[]`（我預填 8 檔候選）
+- 對每一檔跑一次 Claude 分析（依 `scripts/skills-prompt.md` 內的 12 條方法論打分）
+- 依分數排名，取前 5 名進 `stocks[]`（35/25/20/10/10 權重），其餘回到 `candidates[]`
+- 更新 `lastReviewed` / `nextReviewBy`
+- 自動開 PR，內容包含每檔的分數 / chokepoint 位置 / 論點 / 失效條件 / 待驗證原始文件
+- 你 review + merge → GitHub Pages 網站自動更新
+
+### 手動觸發（不等到月底）
+
+- Repo → Actions → Serenity monthly review → Run workflow
+- 勾 `force = true` 就能立刻跑一次
+
+### 想改候選名單？
+
+- 直接編輯 `serenity.json` 的 `candidates[]`
+- 加入新的台股（`name` / `ticker` / `market: "TW"` / `note`）
+- 下次 review 時 workflow 會納入評分
+
+### 成本 / 上限
+
+- 每次 review 掃 15 檔上限（`MAX_TICKERS_PER_RUN` in `scripts/serenity-review.mjs`）
+- 模型預設 `claude-sonnet-5`（可透過手動觸發時的 `model` 參數換成 `claude-opus-4-8`）
+- Sonnet 每次 review 約 $0.5–$1，Opus 約 $2–$4
+
+### 免責
+
+- LLM 打分**不是交易信號**，PR 有預設 checklist 要你去公開資訊觀測站抽驗
+- Skills 本身明文禁止 buy/sell 語言（見 `scripts/skills-prompt.md`）
+- Merge 前一定要看每檔的「失效條件」欄
 
 ## 剩餘待接（非 Phase 4 範疇，如需求可另開）
 

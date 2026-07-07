@@ -9,5 +9,15 @@
     { "name": "華邦電", "ticker": "2344", "market": "TW", "weight": 0.20, "tier": "🔥 高" },
     { "name": "緯穎",   "ticker": "6669", "market": "TW", "weight": 0.10, "tier": "📈 中高" },
     { "name": "台積電", "ticker": "2330", "market": "TW", "weight": 0.10, "tier": "🛡️ 底倉" }
+  ],
+  "candidates": [
+    { "name": "京元電子", "ticker": "2449", "market": "TW", "note": "AI ASIC 測試 OSAT，NVIDIA/Broadcom 供應鏈" },
+    { "name": "群聯",     "ticker": "8299", "market": "TW", "note": "AI 儲存控制 IC，HBM 週邊記憶體整合" },
+    { "name": "南亞科",   "ticker": "2408", "market": "TW", "note": "DRAM 產能，AI 記憶體長線" },
+    { "name": "台光電",   "ticker": "2383", "market": "TW", "note": "AI 伺服器高階 CCL，高速訊號完整性" },
+    { "name": "健策",     "ticker": "3653", "market": "TW", "note": "AI GPU 散熱模組（VC/BP），NV/AMD 主力供應鏈" },
+    { "name": "台達電",   "ticker": "2308", "market": "TW", "note": "AI 資料中心電源方案，48V/800V 架構" },
+    { "name": "信驊",     "ticker": "5274", "market": "TW", "note": "BMC 遠端管理晶片，AI 伺服器單機必備" },
+    { "name": "力智",     "ticker": "6719", "market": "TW", "note": "AI 電源管理 IC，SiC/GaN 布局" }
   ]
 }
