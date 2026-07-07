@@ -115,6 +115,8 @@
   let symbolLookupTimer = null;
   let lastLookedUp = '';
 
+  const originalNamePlaceholder = drawerNameEl?.placeholder || '例：台積電';
+
   function queueNameLookup() {
     clearTimeout(symbolLookupTimer);
     symbolLookupTimer = setTimeout(runNameLookup, 600);
@@ -128,9 +130,12 @@
     const key = `${drawerMarket}:${sym}`;
     if (key === lastLookedUp) return;
     lastLookedUp = key;
+    // UI hint while fetching (only if name still empty)
+    if (!drawerNameEl.value) drawerNameEl.placeholder = '查詢中…';
     const name = await window.stockfolio?.fetchStockName?.(drawerMarket, sym);
+    // Restore placeholder regardless of result
+    drawerNameEl.placeholder = originalNamePlaceholder;
     if (name && drawerSymbolEl.value.trim().replace(/\.TW$/i, '').toUpperCase() === sym) {
-      // Only apply if user hasn't since typed a different symbol
       if (!drawerNameEl.value || drawerNameEl.dataset.autoFilled === 'true') {
         drawerNameEl.value = name;
         drawerNameEl.dataset.autoFilled = 'true';

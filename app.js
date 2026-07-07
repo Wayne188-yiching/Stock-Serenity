@@ -83,19 +83,66 @@ function shareUnitLabel(stock) {
     return stock.shareUnit === 'share' ? '股' : '張';
 }
 
+const stockNameCache = {};
+
 async function fetchStockName(market, symbol) {
+    const key = `${market}:${symbol}`;
+    if (key in stockNameCache) return stockNameCache[key];
+
+    let name = null;
+    if (market === 'TW') {
+        // TWSE 官方 MIS API — 上市 (tse_) 或上櫃 (otc_)，回中文簡稱如「台積電」
+        name = await lookupTwseName(symbol);
+    }
+    if (!name) {
+        // Yahoo Finance search — 支援台美股跨市場，長期無需 crumb
+        name = await lookupYahooSearchName(market, symbol);
+    }
+    if (!name) {
+        // 最後 fallback：Yahoo quoteSummary（部分 symbol 才能過）
+        name = await lookupYahooQuoteName(market, symbol);
+    }
+    if (name) stockNameCache[key] = name;
+    return name;
+}
+
+async function lookupTwseName(symbol) {
+    for (const prefix of ['tse_', 'otc_']) {
+        try {
+            const url = `https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=${prefix}${symbol}.tw&json=1&delay=0`;
+            const response = await fetchViaProxy(url);
+            const data = await response.json();
+            const item = data?.msgArray?.[0];
+            if (item?.n) return item.n;
+        } catch (e) { /* try next prefix */ }
+    }
+    return null;
+}
+
+async function lookupYahooSearchName(market, symbol) {
+    const sym = market === 'TW' ? `${symbol}.TW` : symbol;
+    try {
+        const url = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(sym)}&quotesCount=1&newsCount=0`;
+        const response = await fetchViaProxy(url);
+        const data = await response.json();
+        const q = data?.quotes?.[0];
+        if (q?.shortname || q?.longname) return q.shortname || q.longname;
+    } catch (e) { /* fall through */ }
+    return null;
+}
+
+async function lookupYahooQuoteName(market, symbol) {
     const sym = market === 'TW' ? `${symbol}.TW` : symbol;
     try {
         const url = `https://query2.finance.yahoo.com/v10/finance/quoteSummary/${sym}?modules=quoteType`;
         const response = await fetchViaProxy(url);
         const data = await response.json();
         const qt = data.quoteSummary?.result?.[0]?.quoteType;
-        if (!qt) return null;
-        return qt.shortName || qt.longName || null;
+        if (qt) return qt.shortName || qt.longName || null;
     } catch (err) {
         console.warn(`Name lookup failed for ${symbol}:`, err.message);
-        return null;
     }
+    return null;
 }
 
 async function fetchUsdTwdRate() {
