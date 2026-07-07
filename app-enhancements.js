@@ -71,17 +71,77 @@
 
   // Market toggle inside drawer
   const marketToggle = document.getElementById('drawer-market');
+  const unitToggle   = document.getElementById('drawer-unit-toggle');
+  const unitLabelEl  = document.getElementById('drawer-unit-label');
   let drawerMarket = 'TW';
+  let drawerUnit   = 'lot'; // 'lot' (張) | 'share' (股)
+
+  function syncUnitVisibility() {
+    if (!unitToggle) return;
+    if (drawerMarket === 'US') {
+      unitToggle.hidden = true;
+      drawerUnit = 'share';
+      if (unitLabelEl) unitLabelEl.textContent = '股';
+    } else {
+      unitToggle.hidden = false;
+      if (unitLabelEl) unitLabelEl.textContent = drawerUnit === 'share' ? '股' : '張';
+    }
+  }
   marketToggle?.querySelectorAll('.market-opt').forEach(opt => {
     opt.addEventListener('click', () => {
       drawerMarket = opt.dataset.mkt;
       marketToggle.querySelectorAll('.market-opt').forEach(o =>
         o.classList.toggle('market-opt-active', o === opt)
       );
-      // Update shares label
-      const lbl = document.getElementById('drawer-shares-label');
-      if (lbl) lbl.textContent = drawerMarket === 'TW' ? '持股（張）' : '持股（股）';
+      syncUnitVisibility();
+      // Re-run name autofill in case market changed the ticker's meaning
+      queueNameLookup();
     });
+  });
+  unitToggle?.querySelectorAll('.unit-opt').forEach(opt => {
+    opt.addEventListener('click', () => {
+      drawerUnit = opt.dataset.unit;
+      unitToggle.querySelectorAll('.unit-opt').forEach(o =>
+        o.classList.toggle('unit-opt-active', o === opt)
+      );
+      if (unitLabelEl) unitLabelEl.textContent = drawerUnit === 'share' ? '股' : '張';
+    });
+  });
+  syncUnitVisibility();
+
+  // ---------- Ticker → auto-fill stock name ----------
+  const drawerSymbolEl = document.getElementById('drawer-symbol');
+  const drawerNameEl   = document.getElementById('drawer-name');
+  let symbolLookupTimer = null;
+  let lastLookedUp = '';
+
+  function queueNameLookup() {
+    clearTimeout(symbolLookupTimer);
+    symbolLookupTimer = setTimeout(runNameLookup, 600);
+  }
+  async function runNameLookup() {
+    if (!drawerSymbolEl || !drawerNameEl) return;
+    let sym = drawerSymbolEl.value.trim().replace(/\.TW$/i, '').toUpperCase();
+    if (!sym || sym.length < 2) return;
+    // Only autofill if name empty OR previously filled by us
+    if (drawerNameEl.value && drawerNameEl.dataset.autoFilled !== 'true') return;
+    const key = `${drawerMarket}:${sym}`;
+    if (key === lastLookedUp) return;
+    lastLookedUp = key;
+    const name = await window.stockfolio?.fetchStockName?.(drawerMarket, sym);
+    if (name && drawerSymbolEl.value.trim().replace(/\.TW$/i, '').toUpperCase() === sym) {
+      // Only apply if user hasn't since typed a different symbol
+      if (!drawerNameEl.value || drawerNameEl.dataset.autoFilled === 'true') {
+        drawerNameEl.value = name;
+        drawerNameEl.dataset.autoFilled = 'true';
+      }
+    }
+  }
+  drawerSymbolEl?.addEventListener('input', queueNameLookup);
+  drawerSymbolEl?.addEventListener('blur', runNameLookup);
+  // If user manually edits the name, stop auto-overwriting
+  drawerNameEl?.addEventListener('input', () => {
+    drawerNameEl.dataset.autoFilled = 'false';
   });
 
   // Submit drawer → mirror to #add-stock-form and dispatch submit
@@ -108,6 +168,9 @@
     costIn.value    = document.getElementById('drawer-cost')?.value || '';
     if (targetIn) targetIn.value = document.getElementById('drawer-target')?.value || '';
     if (stopIn)   stopIn.value   = document.getElementById('drawer-stoploss')?.value || '';
+    // Mirror unit choice into hidden input on the inline form
+    const unitHidden = document.getElementById('stock-shareunit');
+    if (unitHidden) unitHidden.value = drawerMarket === 'US' ? 'share' : drawerUnit;
 
     // Trigger existing addStock via form submit
     if (typeof form.requestSubmit === 'function') form.requestSubmit();
@@ -118,6 +181,8 @@
       ['drawer-symbol','drawer-name','drawer-shares','drawer-cost','drawer-target','drawer-stoploss'].forEach(id => {
         const el = document.getElementById(id); if (el) el.value = '';
       });
+      if (drawerNameEl) drawerNameEl.dataset.autoFilled = 'false';
+      lastLookedUp = '';
       closeDrawer();
     }, 100);
   });

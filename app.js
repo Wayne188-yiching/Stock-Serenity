@@ -72,6 +72,32 @@ function marketRate(market) {
     return market === 'US' ? usdTwdRate : 1;
 }
 
+// TW positions may be entered as 張 (default, 1 lot = 1000 shares) or 股 (odd-lot).
+// Missing shareUnit on a TW stock is treated as 'lot' for backward compatibility.
+function sharesMultiplier(stock) {
+    if (stock.market !== 'TW') return 1;
+    return stock.shareUnit === 'share' ? 1 : 1000;
+}
+function shareUnitLabel(stock) {
+    if (stock.market !== 'TW') return '股';
+    return stock.shareUnit === 'share' ? '股' : '張';
+}
+
+async function fetchStockName(market, symbol) {
+    const sym = market === 'TW' ? `${symbol}.TW` : symbol;
+    try {
+        const url = `https://query2.finance.yahoo.com/v10/finance/quoteSummary/${sym}?modules=quoteType`;
+        const response = await fetchViaProxy(url);
+        const data = await response.json();
+        const qt = data.quoteSummary?.result?.[0]?.quoteType;
+        if (!qt) return null;
+        return qt.shortName || qt.longName || null;
+    } catch (err) {
+        console.warn(`Name lookup failed for ${symbol}:`, err.message);
+        return null;
+    }
+}
+
 async function fetchUsdTwdRate() {
     if (Date.now() - usdTwdFetchedAt < RATE_CACHE_TTL_MS) return usdTwdRate;
     try {
@@ -122,6 +148,9 @@ function addStock(event) {
     const stopLossRaw    = document.getElementById('stock-stoploss')?.value;
     const targetPrice = targetPriceRaw ? parseFloat(targetPriceRaw) : null;
     const stopLoss    = stopLossRaw    ? parseFloat(stopLossRaw)    : null;
+    // shareUnit: 'lot' (張, TW default) or 'share' (股, for odd-lot). US stocks always 'share'.
+    const shareUnitRaw = document.getElementById('stock-shareunit')?.value;
+    const shareUnit = market === 'US' ? 'share' : (shareUnitRaw === 'share' ? 'share' : 'lot');
 
     if (!symbol || !shares || !cost) {
         showToast('請填寫完整資料', 'error');
@@ -135,7 +164,7 @@ function addStock(event) {
     }
 
     portfolio.push({
-        market, symbol, name: name || symbol, shares, cost,
+        market, symbol, name: name || symbol, shares, cost, shareUnit,
         targetPrice: (targetPrice && targetPrice > 0) ? targetPrice : null,
         stopLoss:    (stopLoss    && stopLoss    > 0) ? stopLoss    : null,
     });
@@ -267,7 +296,7 @@ async function refreshAll() {
     let totalCost = 0;
 
     results.forEach(({ stock, priceData }) => {
-        const multiplier = stock.market === 'TW' ? 1000 : 1; // 台股1張=1000股
+        const multiplier = sharesMultiplier(stock);
         const rate = marketRate(stock.market);
         const value = priceData.price * stock.shares * multiplier * rate;
         const cost = stock.cost * stock.shares * multiplier * rate;
@@ -324,14 +353,14 @@ function renderHoldingsTable(results) {
     }
 
     tbody.innerHTML = results.map(({ stock, priceData }) => {
-        const multiplier = stock.market === 'TW' ? 1000 : 1;
+        const multiplier = sharesMultiplier(stock);
         const rate = marketRate(stock.market);
         const value = priceData.price * stock.shares * multiplier * rate;
         const cost = stock.cost * stock.shares * multiplier * rate;
         const pnl = value - cost;
         const pnlPct = cost > 0 ? (pnl / cost) * 100 : 0;
         const pnlClass = pnl >= 0 ? 'profit-text' : 'loss-text';
-        const sharesUnit = stock.market === 'TW' ? '張' : '股';
+        const sharesUnit = shareUnitLabel(stock);
         const alert = evaluatePriceAlert(stock, priceData.price);
 
         return `<tr>
@@ -378,7 +407,7 @@ function renderManageTable() {
     }
 
     tbody.innerHTML = portfolio.map((stock, i) => {
-        const sharesUnit = stock.market === 'TW' ? '張' : '股';
+        const sharesUnit = shareUnitLabel(stock);
         const t = stock.targetPrice != null ? stock.targetPrice : '';
         const s = stock.stopLoss    != null ? stock.stopLoss    : '';
         return `<tr>
@@ -427,7 +456,7 @@ function renderAllocationChart(results) {
     const colors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4', '#ec4899', '#84cc16'];
     
     const data = results.map(({ stock, priceData }) => {
-        const multiplier = stock.market === 'TW' ? 1000 : 1;
+        const multiplier = sharesMultiplier(stock);
         return priceData.price * stock.shares * multiplier * marketRate(stock.market);
     });
 
@@ -462,7 +491,7 @@ function renderPnlChart(results) {
     if (chartInstances.pnl) chartInstances.pnl.destroy();
 
     const pnlData = results.map(({ stock, priceData }) => {
-        const multiplier = stock.market === 'TW' ? 1000 : 1;
+        const multiplier = sharesMultiplier(stock);
         const rate = marketRate(stock.market);
         const value = priceData.price * stock.shares * multiplier * rate;
         const cost = stock.cost * stock.shares * multiplier * rate;
@@ -1090,9 +1119,9 @@ async function renderMyHoldings() {
     const rows = [];
 
     for (const h of myHoldings) {
-        const stock = { market: h.market || 'TW', symbol: h.symbol, name: h.name };
+        const stock = { market: h.market || 'TW', symbol: h.symbol, name: h.name, shareUnit: h.shareUnit };
         const priceData = await fetchPrice(stock);
-        const multiplier = stock.market === 'TW' ? 1000 : 1;
+        const multiplier = sharesMultiplier(stock);
         const value = priceData.price * h.shares * multiplier;
         const cost = h.cost * h.shares * multiplier;
         const pnl = value - cost;
@@ -1109,7 +1138,7 @@ async function renderMyHoldings() {
             <td>${h.symbol}</td>
             <td>${h.name} ${serenityTag}</td>
             <td>${stock.market}</td>
-            <td>${h.shares}${stock.market === 'TW' ? '張' : '股'}</td>
+            <td>${h.shares}${shareUnitLabel(stock)}</td>
             <td>$${h.cost.toLocaleString()}</td>
             <td>$${priceData.price.toLocaleString()}</td>
             <td>$${Math.round(value).toLocaleString()}</td>
@@ -1377,6 +1406,7 @@ window.stockfolio = {
     exportPortfolioCSV,
     importPortfolioFile,
     importPortfolioCSV,
+    fetchStockName,
     getPortfolio: () => portfolio.slice(),
 };
 

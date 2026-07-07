@@ -1164,6 +1164,26 @@ tr.skeleton-row .sk-bar-lg { width: 90%; }
 .form-row-2 {
   display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3);
 }
+.unit-toggle {
+  display: flex; gap: 4px; margin-top: 6px;
+}
+.unit-toggle[hidden] { display: none; }
+.unit-opt {
+  flex: 1; padding: 6px 8px;
+  background: var(--bg-base);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-sm, 6px);
+  color: var(--text-muted);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all var(--dur) var(--ease);
+}
+.unit-opt-active {
+  background: rgba(91,157,255,0.08);
+  border-color: var(--accent-primary);
+  color: var(--text-primary);
+  font-weight: 600;
+}
 .drawer-hint {
   font-size: 11px; color: var(--text-dim);
   padding: var(--sp-2) var(--sp-3);
@@ -1598,8 +1618,10 @@ tr.skeleton-row .sk-bar-lg { width: 90%; }
   .search-input { min-width: 0; }
   .action-bar-right { justify-content: flex-end; }
 
-  .drawer { width: 100%; max-width: 100%; }
+  .drawer { width: 100%; max-width: 100%; bottom: var(--mobile-tabbar-h); }
+  .drawer-overlay { bottom: var(--mobile-tabbar-h); }
   .drawer-head, .stepper, .drawer-body, .drawer-foot { padding-left: var(--sp-4); padding-right: var(--sp-4); }
+  .drawer-foot { padding-bottom: max(var(--sp-4), env(safe-area-inset-bottom)); }
 
   .settings-popover { left: 12px; right: 12px; width: auto; bottom: calc(var(--mobile-tabbar-h) + 12px); }
 

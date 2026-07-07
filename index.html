@@ -228,6 +228,7 @@
     <div class="card form-card" id="add-stock-card" hidden>
       <h3>新增持股</h3>
       <form id="add-stock-form" onsubmit="addStock(event)">
+        <input type="hidden" id="stock-shareunit" value="lot">
         <div class="form-grid">
           <div class="form-group">
             <label for="stock-market">市場</label>
@@ -682,8 +683,12 @@
     </div>
     <div class="form-row-2">
       <div class="form-group">
-        <label id="drawer-shares-label" for="drawer-shares">持股（張）</label>
+        <label id="drawer-shares-label" for="drawer-shares">持股 · <span id="drawer-unit-label">張</span></label>
         <input type="number" id="drawer-shares" step="0.001" min="0.001" placeholder="1">
+        <div class="unit-toggle" id="drawer-unit-toggle" role="group" aria-label="持股單位">
+          <button type="button" class="unit-opt unit-opt-active" data-unit="lot">張 (1000 股)</button>
+          <button type="button" class="unit-opt" data-unit="share">股 (零股)</button>
+        </div>
       </div>
       <div class="form-group">
         <label for="drawer-cost">買入均價</label>
